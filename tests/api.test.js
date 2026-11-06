@@ -1,17 +1,250 @@
-import {test,before,after} from 'node:test';
-import assert from 'node:assert/strict';
-import {database,migrate} from '../apps/api/src/db.js';
-import {seed} from '../apps/api/src/seed.js';
-import {createApp,jobs} from '../apps/api/src/app.js';
-let db,server,base;const cookies={};
-async function req(url,{role,method='GET',body}={}){const r=await fetch(base+url,{method,headers:{'Content-Type':'application/json',...(role?{Cookie:cookies[role]}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json(),headers:r.headers};}
-async function login(name){assert.equal((await req('/auth/login',{method:'POST',body:{email:name+'@smarttutor.test',password:'LearnTogether!26'}})).status,200);const m=await db('mail').where({recipient:name+'@smarttutor.test'}).orderBy('id','desc').first(),code=m.body.match(/\b\d{6}\b/)[0];const r=await req('/auth/otp',{method:'POST',body:{email:name+'@smarttutor.test',code}});assert.equal(r.status,200);cookies[name]=r.headers.get('set-cookie').split(';')[0];return code;}
-before(async()=>{db=database(':memory:');await migrate(db);await seed(db);server=createApp(db).listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base=`http://127.0.0.1:${server.address().port}/api`;});
-after(async()=>{await new Promise(r=>server.close(r));await db.destroy();});
-test('public catalogue excludes passwords and protected endpoints reject anonymous access',async()=>{assert.equal((await req('/health')).data.database,'connected');const r=await req('/tutors');assert.equal(r.data.length,3);assert.equal(r.data[0].password,undefined);assert.equal((await req('/admin/users')).status,401);});
-test('OTP is required, single use, and role authorization is enforced',async()=>{const code=await login('alex');assert.equal((await req('/auth/otp',{method:'POST',body:{email:'alex@smarttutor.test',code}})).status,401);assert.equal((await req('/admin/users',{role:'alex'})).status,403);assert.equal((await req('/requests',{role:'alex',method:'POST',body:{}})).status,400);});
-test('registration requires email verification and cannot grant public admin privileges',async()=>{const subject=(await db('subjects').first()).id;const body={name:'New Learner',username:'newlearner',email:'new@example.test',password:'long-password-123',role:'admin',subjects:[subject],terms:true};assert.equal((await req('/auth/register',{method:'POST',body})).status,403);body.role='student';body.dob='2000-01-01';body.address='Demo street';assert.equal((await req('/auth/register',{method:'POST',body})).status,201);assert.equal((await req('/auth/login',{method:'POST',body:{email:body.email,password:body.password}})).status,403);const m=await db('mail').where({recipient:body.email}).first(),token=new URL(m.body.slice(5)).searchParams.get('token');assert.equal((await req('/auth/verify',{method:'POST',body:{token}})).status,200);assert.equal((await req('/auth/verify',{method:'POST',body:{token}})).status,400);});
-test('admin assignment checks availability and conflicts; messages and reviews enforce eligibility',async()=>{await login('admin');await login('elena');const t=await db('users').where({username:'elena'}).first(),slot=await db('availability').where({tutor_id:t.id}).first(),subject=(await db('user_subjects').where({user_id:t.id}).first()).subject_id;const body={tutor_id:t.id,subject_id:subject,starts_at:slot.starts_at,duration:60,notes:'Help with algebra'};let r=await req('/requests',{role:'alex',method:'POST',body});assert.equal(r.status,201);const rid=r.data.id;assert.equal((await db('sessions')).length,0);assert.equal((await req('/requests/'+rid+'/assign',{role:'alex',method:'POST'})).status,403);assert.equal((await req('/requests/'+rid+'/assign',{role:'admin',method:'POST'})).status,201);const next=await req('/requests',{role:'alex',method:'POST',body});assert.equal((await req('/requests/'+next.data.id+'/assign',{role:'admin',method:'POST'})).status,409);assert.equal((await req('/messages/'+t.id,{role:'alex',method:'POST',body:{body:'Hello tutor'}})).status,201);const student=await db('users').where({username:'alex'}).first();assert.equal((await req('/messages/'+student.id,{role:'elena'})).data[0].body,'Hello tutor');const other=await db('users').where({username:'marcus'}).first();assert.equal((await req('/messages/'+other.id,{role:'alex'})).status,403);assert.equal((await req('/reviews',{role:'alex',method:'POST',body:{session_id:1,rating:5,body:'Great'}})).status,403);assert.equal((await req('/tutorials/1',{role:'elena',method:'DELETE'})).status,403);});
-test('reminders are persisted only once per participant',async()=>{await db('sessions').where({id:1}).update({starts_at:new Date(Date.now()+3600000).toISOString()});await jobs(db);await jobs(db);assert.equal((await db('mail').where('job_key','like','reminder:1:%')).length,2);});
-test('CSV, PDF, and Excel exports are valid files restricted to admins',async()=>{for(const [format,magic] of [['csv','id,student'],['pdf','%PDF'],['xlsx','PK']]){const r=await fetch(base+'/admin/export?format='+format,{headers:{Cookie:cookies.admin}});assert.equal(r.status,200);assert.ok(Buffer.from(await r.arrayBuffer()).subarray(0,magic.length).toString().startsWith(magic));assert.equal((await fetch(base+'/admin/export?format='+format)).status,401);}});
-test('logout revokes access and production has no development inbox',async()=>{await req('/auth/logout',{role:'alex',method:'POST'});assert.equal((await req('/requests',{role:'alex'})).status,401);const p=createApp(db,{production:true}).listen(0,'127.0.0.1');await new Promise(r=>p.once('listening',r));try{assert.equal((await fetch(`http://127.0.0.1:${p.address().port}/api/dev/mail`)).status,404);}finally{await new Promise(r=>p.close(r));}});
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { database, migrate } from "../apps/api/src/db.js";
+import { seed } from "../apps/api/src/seed.js";
+import { createApp, jobs } from "../apps/api/src/app.js";
+let db, server, base;
+const cookies = {};
+async function req(url, { role, method = "GET", body } = {}) {
+  const r = await fetch(base + url, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(role ? { Cookie: cookies[role] } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return { status: r.status, data: await r.json(), headers: r.headers };
+}
+async function login(name) {
+  assert.equal(
+    (
+      await req("/auth/login", {
+        method: "POST",
+        body: {
+          email: name + "@smarttutor.test",
+          password: "LearnTogether!26",
+        },
+      })
+    ).status,
+    200,
+  );
+  const m = await db("mail")
+      .where({ recipient: name + "@smarttutor.test" })
+      .orderBy("id", "desc")
+      .first(),
+    code = m.body.match(/\b\d{6}\b/)[0];
+  const r = await req("/auth/otp", {
+    method: "POST",
+    body: { email: name + "@smarttutor.test", code },
+  });
+  assert.equal(r.status, 200);
+  cookies[name] = r.headers.get("set-cookie").split(";")[0];
+  return code;
+}
+before(async () => {
+  db = database(":memory:");
+  await migrate(db);
+  await seed(db);
+  server = createApp(db).listen(0, "127.0.0.1");
+  await new Promise((r) => server.once("listening", r));
+  base = `http://127.0.0.1:${server.address().port}/api`;
+});
+after(async () => {
+  await new Promise((r) => server.close(r));
+  await db.destroy();
+});
+test("public catalogue excludes passwords and protected endpoints reject anonymous access", async () => {
+  assert.equal((await req("/health")).data.database, "connected");
+  const r = await req("/tutors");
+  assert.equal(r.data.length, 3);
+  assert.equal(r.data[0].password, undefined);
+  assert.equal((await req("/admin/users")).status, 401);
+});
+test("OTP is required, single use, and role authorization is enforced", async () => {
+  const code = await login("alex");
+  assert.equal(
+    (
+      await req("/auth/otp", {
+        method: "POST",
+        body: { email: "alex@smarttutor.test", code },
+      })
+    ).status,
+    401,
+  );
+  assert.equal((await req("/admin/users", { role: "alex" })).status, 403);
+  assert.equal(
+    (await req("/requests", { role: "alex", method: "POST", body: {} })).status,
+    400,
+  );
+});
+test("registration requires email verification and cannot grant public admin privileges", async () => {
+  const subject = (await db("subjects").first()).id;
+  const body = {
+    name: "New Learner",
+    username: "newlearner",
+    email: "new@example.test",
+    password: "long-password-123",
+    role: "admin",
+    subjects: [subject],
+    terms: true,
+  };
+  assert.equal(
+    (await req("/auth/register", { method: "POST", body })).status,
+    403,
+  );
+  body.role = "student";
+  body.dob = "2000-01-01";
+  body.address = "Demo street";
+  assert.equal(
+    (await req("/auth/register", { method: "POST", body })).status,
+    201,
+  );
+  assert.equal(
+    (
+      await req("/auth/login", {
+        method: "POST",
+        body: { email: body.email, password: body.password },
+      })
+    ).status,
+    403,
+  );
+  const m = await db("mail").where({ recipient: body.email }).first(),
+    token = new URL(m.body.slice(5)).searchParams.get("token");
+  assert.equal(
+    (await req("/auth/verify", { method: "POST", body: { token } })).status,
+    200,
+  );
+  assert.equal(
+    (await req("/auth/verify", { method: "POST", body: { token } })).status,
+    400,
+  );
+});
+test("admin assignment checks availability and conflicts; messages and reviews enforce eligibility", async () => {
+  await login("admin");
+  await login("elena");
+  const t = await db("users").where({ username: "elena" }).first(),
+    slot = await db("availability").where({ tutor_id: t.id }).first(),
+    subject = (await db("user_subjects").where({ user_id: t.id }).first())
+      .subject_id;
+  const body = {
+    tutor_id: t.id,
+    subject_id: subject,
+    starts_at: slot.starts_at,
+    duration: 60,
+    notes: "Help with algebra",
+  };
+  let r = await req("/requests", { role: "alex", method: "POST", body });
+  assert.equal(r.status, 201);
+  const rid = r.data.id;
+  assert.equal((await db("sessions")).length, 0);
+  assert.equal(
+    (
+      await req("/requests/" + rid + "/assign", {
+        role: "alex",
+        method: "POST",
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await req("/requests/" + rid + "/assign", {
+        role: "admin",
+        method: "POST",
+      })
+    ).status,
+    201,
+  );
+  const next = await req("/requests", { role: "alex", method: "POST", body });
+  assert.equal(
+    (
+      await req("/requests/" + next.data.id + "/assign", {
+        role: "admin",
+        method: "POST",
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await req("/messages/" + t.id, {
+        role: "alex",
+        method: "POST",
+        body: { body: "Hello tutor" },
+      })
+    ).status,
+    201,
+  );
+  const student = await db("users").where({ username: "alex" }).first();
+  assert.equal(
+    (await req("/messages/" + student.id, { role: "elena" })).data[0].body,
+    "Hello tutor",
+  );
+  const other = await db("users").where({ username: "marcus" }).first();
+  assert.equal(
+    (await req("/messages/" + other.id, { role: "alex" })).status,
+    403,
+  );
+  assert.equal(
+    (
+      await req("/reviews", {
+        role: "alex",
+        method: "POST",
+        body: { session_id: 1, rating: 5, body: "Great" },
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (await req("/tutorials/1", { role: "elena", method: "DELETE" })).status,
+    403,
+  );
+});
+test("reminders are persisted only once per participant", async () => {
+  await db("sessions")
+    .where({ id: 1 })
+    .update({ starts_at: new Date(Date.now() + 3600000).toISOString() });
+  await jobs(db);
+  await jobs(db);
+  assert.equal(
+    (await db("mail").where("job_key", "like", "reminder:1:%")).length,
+    2,
+  );
+});
+test("CSV, PDF, and Excel exports are valid files restricted to admins", async () => {
+  for (const [format, magic] of [
+    ["csv", "id,student"],
+    ["pdf", "%PDF"],
+    ["xlsx", "PK"],
+  ]) {
+    const r = await fetch(base + "/admin/export?format=" + format, {
+      headers: { Cookie: cookies.admin },
+    });
+    assert.equal(r.status, 200);
+    assert.ok(
+      Buffer.from(await r.arrayBuffer())
+        .subarray(0, magic.length)
+        .toString()
+        .startsWith(magic),
+    );
+    assert.equal(
+      (await fetch(base + "/admin/export?format=" + format)).status,
+      401,
+    );
+  }
+});
+test("logout revokes access and production has no development inbox", async () => {
+  await req("/auth/logout", { role: "alex", method: "POST" });
+  assert.equal((await req("/requests", { role: "alex" })).status, 401);
+  const p = createApp(db, { production: true }).listen(0, "127.0.0.1");
+  await new Promise((r) => p.once("listening", r));
+  try {
+    assert.equal(
+      (await fetch(`http://127.0.0.1:${p.address().port}/api/dev/mail`)).status,
+      404,
+    );
+  } finally {
+    await new Promise((r) => p.close(r));
+  }
+});

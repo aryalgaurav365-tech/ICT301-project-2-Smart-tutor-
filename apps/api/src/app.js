@@ -229,12 +229,10 @@ export function createApp(
       return uid;
     });
     await challenge(await db("users").where({ id: uid }).first(), "verify");
-    res
-      .status(201)
-      .json({
-        message:
-          "Check your email to verify your account. Tutors also need administrator approval.",
-      });
+    res.status(201).json({
+      message:
+        "Check your email to verify your account. Tutors also need administrator approval.",
+    });
   });
   app.post("/api/auth/verify", async (req, res) => {
     const { token: code } = z.object({ token: text }).parse(req.body);
@@ -903,18 +901,16 @@ export function createApp(
         : err.code === "LIMIT_FILE_SIZE"
           ? 413
           : err.status || 500;
-    res
-      .status(status)
-      .json({
-        error:
-          err instanceof z.ZodError
-            ? err.issues
-                .map((i) => `${i.path.join(".")}: ${i.message}`)
-                .join("; ")
-            : status === 500
-              ? "Something went wrong. Please try again."
-              : err.message,
-      });
+    res.status(status).json({
+      error:
+        err instanceof z.ZodError
+          ? err.issues
+              .map((i) => `${i.path.join(".")}: ${i.message}`)
+              .join("; ")
+          : status === 500
+            ? "Something went wrong. Please try again."
+            : err.message,
+    });
     if (status === 500) console.error(err.code || err.name, err.message);
   });
   return app;
