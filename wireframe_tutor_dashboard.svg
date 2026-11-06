@@ -1,0 +1,75 @@
+<svg viewBox="0 0 560 780" xmlns="http://www.w3.org/2000/svg" font-family="Arial,sans-serif">
+  <rect width="560" height="780" fill="#f4f6f8" rx="6"/>
+  <!-- top nav -->
+  <rect x="0" y="0" width="560" height="44" fill="#ddd"/>
+  <rect x="12" y="12" width="80" height="20" rx="3" fill="#aaa"/>
+  <rect x="460" y="10" width="88" height="24" rx="12" fill="#bbb"/>
+  <text x="504" y="26" text-anchor="middle" font-size="10" fill="#555">👤 Tutor ▾</text>
+  <!-- sidebar -->
+  <rect x="0" y="44" width="130" height="736" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="10" y="60" width="110" height="30" rx="4" fill="#e8f4fb"/>
+  <text x="65" y="80" text-anchor="middle" font-size="11" fill="#008B8B" font-weight="bold">📊 Dashboard</text>
+  <text x="65" y="115" text-anchor="middle" font-size="11" fill="#555">📤 Upload Content</text>
+  <line x1="10" y1="124" x2="120" y2="124" stroke="#eee" stroke-width="1"/>
+  <text x="65" y="148" text-anchor="middle" font-size="11" fill="#555">🗓 My Availability</text>
+  <line x1="10" y1="157" x2="120" y2="157" stroke="#eee" stroke-width="1"/>
+  <text x="65" y="181" text-anchor="middle" font-size="11" fill="#555">💬 Messaging</text>
+  <line x1="10" y1="190" x2="120" y2="190" stroke="#eee" stroke-width="1"/>
+  <text x="65" y="214" text-anchor="middle" font-size="11" fill="#555">👥 Students List</text>
+  <!-- main area -->
+  <text x="155" y="70" font-size="14" fill="#333" font-weight="bold">Tutor Dashboard</text>
+  <text x="155" y="86" font-size="10" fill="#888">Your teaching activity at a glance</text>
+  <!-- stat cards -->
+  <rect x="150" y="96" width="88" height="64" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="194" y="118" text-anchor="middle" font-size="20" fill="#008B8B" font-weight="bold">8</text>
+  <text x="194" y="136" text-anchor="middle" font-size="10" fill="#888">My Students</text>
+  <rect x="246" y="96" width="88" height="64" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="290" y="118" text-anchor="middle" font-size="20" fill="#008B8B" font-weight="bold">5</text>
+  <text x="290" y="136" text-anchor="middle" font-size="10" fill="#888">Sessions This Week</text>
+  <rect x="342" y="96" width="88" height="64" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="386" y="118" text-anchor="middle" font-size="20" fill="#008B8B" font-weight="bold">12</text>
+  <text x="386" y="136" text-anchor="middle" font-size="10" fill="#888">Tutorials Uploaded</text>
+  <rect x="438" y="96" width="112" height="64" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="494" y="118" text-anchor="middle" font-size="20" fill="#008B8B" font-weight="bold">4.8 ★</text>
+  <text x="494" y="136" text-anchor="middle" font-size="10" fill="#888">Avg Rating</text>
+  <!-- schedule -->
+  <rect x="150" y="176" width="248" height="220" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="165" y="197" font-size="11" fill="#333" font-weight="bold">Today's Schedule</text>
+  <line x1="160" y1="204" x2="388" y2="204" stroke="#eee" stroke-width="1"/>
+  <rect x="162" y="210" width="226" height="40" rx="4" fill="#e8f4fb"/>
+  <text x="172" y="228" font-size="10" fill="#333" font-weight="bold">10:00 AM — Alice (Maths)</text>
+  <text x="172" y="242" font-size="9" fill="#888">Zoom · 60 min</text>
+  <rect x="162" y="256" width="226" height="40" rx="4" fill="#e8f4fb"/>
+  <text x="172" y="274" font-size="10" fill="#333" font-weight="bold">1:00 PM — Bob (Physics)</text>
+  <text x="172" y="288" font-size="9" fill="#888">Zoom · 45 min</text>
+  <rect x="162" y="302" width="226" height="40" rx="4" fill="#fff3cd"/>
+  <text x="172" y="320" font-size="10" fill="#333" font-weight="bold">3:30 PM — Carol (Chemistry)</text>
+  <text x="172" y="334" font-size="9" fill="#888">Pending confirmation</text>
+  <rect x="162" y="350" width="226" height="30" rx="4" fill="#f9f9f9"/>
+  <text x="275" y="370" text-anchor="middle" font-size="10" fill="#008B8B">View Full Calendar →</text>
+  <!-- recent uploads -->
+  <rect x="408" y="176" width="142" height="220" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="423" y="197" font-size="11" fill="#333" font-weight="bold">Recent Uploads</text>
+  <line x1="415" y1="204" x2="542" y2="204" stroke="#eee" stroke-width="1"/>
+  <rect x="418" y="210" width="124" height="30" rx="3" fill="#f9f9f9" stroke="#eee" stroke-width="1"/>
+  <text x="428" y="229" font-size="9" fill="#555">📄 Quadratic Eqns.pdf</text>
+  <rect x="418" y="246" width="124" height="30" rx="3" fill="#f9f9f9" stroke="#eee" stroke-width="1"/>
+  <text x="428" y="265" font-size="9" fill="#555">📄 Wave Optics.pdf</text>
+  <rect x="418" y="282" width="124" height="30" rx="3" fill="#f9f9f9" stroke="#eee" stroke-width="1"/>
+  <text x="428" y="301" font-size="9" fill="#555">🔗 Khan Academy Link</text>
+  <rect x="418" y="318" width="124" height="30" rx="3" fill="#f9f9f9" stroke="#eee" stroke-width="1"/>
+  <text x="428" y="337" font-size="9" fill="#555">📄 Lab Report Guide</text>
+  <rect x="418" y="354" width="124" height="26" rx="4" fill="#555"/>
+  <text x="480" y="371" text-anchor="middle" font-size="9" fill="white">+ Upload New</text>
+  <!-- messages -->
+  <rect x="150" y="410" width="248" height="100" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="165" y="430" font-size="11" fill="#333" font-weight="bold">Unread Messages (2)</text>
+  <line x1="160" y1="437" x2="388" y2="437" stroke="#eee" stroke-width="1"/>
+  <rect x="162" y="443" width="226" height="28" rx="3" fill="#f9f9f9"/>
+  <text x="172" y="461" font-size="9" fill="#333">Alice: Can we reschedule Thursday?</text>
+  <rect x="162" y="476" width="226" height="28" rx="3" fill="#f9f9f9"/>
+  <text x="172" y="494" font-size="9" fill="#333">Bob: Thanks for the notes!</text>
+  <!-- footer -->
+  <rect x="0" y="720" width="560" height="60" fill="#333"/>
+  <text x="280" y="755" text-anchor="middle" font-size="10" fill="#aaa">© 2026 SmartTutor  ·  About Us  ·  Contact  ·  Privacy Policy</text>
+</svg>

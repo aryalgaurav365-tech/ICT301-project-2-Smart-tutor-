@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="900" style="background:#fff;font-family:'Courier New',monospace;">
+  <!-- sketch border -->
+  <rect x="10" y="10" width="780" height="880" rx="4" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="6,3"/>
+  
+  <!-- label -->
+  <text x="400" y="35" text-anchor="middle" font-size="13" fill="#333" font-weight="bold">[ HOME PAGE — Low-Fidelity Wireframe Sketch ]</text>
+
+  <!-- NAV BAR -->
+  <rect x="20" y="48" width="760" height="44" rx="3" fill="#e8e8e8" stroke="#888" stroke-width="1.5"/>
+  <rect x="30" y="56" width="80" height="28" rx="2" fill="#bbb" stroke="#888" stroke-width="1"/>
+  <text x="70" y="75" text-anchor="middle" font-size="11" fill="#444">LOGO</text>
+  <text x="300" y="75" font-size="11" fill="#444">Home</text>
+  <text x="370" y="75" font-size="11" fill="#444">Browse</text>
+  <text x="450" y="75" font-size="11" fill="#444">Find Tutor</text>
+  <text x="540" y="75" font-size="11" fill="#444">Schedule</text>
+  <rect x="640" y="56" width="70" height="26" rx="12" fill="#4a9eba" stroke="#2a7e9a" stroke-width="1"/>
+  <text x="675" y="74" text-anchor="middle" font-size="11" fill="#fff">Login</text>
+  <rect x="720" y="56" width="50" height="26" rx="12" fill="#555" stroke="#333" stroke-width="1"/>
+  <text x="745" y="74" text-anchor="middle" font-size="11" fill="#fff">Register</text>
+
+  <!-- HERO SECTION -->
+  <rect x="20" y="102" width="760" height="220" rx="3" fill="#f0f6fa" stroke="#aaa" stroke-width="1.5"/>
+  <!-- X marks for hero image placeholder -->
+  <line x1="20" y1="102" x2="780" y2="322" stroke="#ccc" stroke-width="1"/>
+  <line x1="780" y1="102" x2="20" y2="322" stroke="#ccc" stroke-width="1"/>
+  <text x="400" y="195" text-anchor="middle" font-size="16" fill="#555" font-weight="bold">[ HERO IMAGE / BANNER ]</text>
+  <text x="400" y="218" text-anchor="middle" font-size="13" fill="#666">SmartTutor — Learn Smarter, Grow Faster</text>
+  <!-- CTA buttons -->
+  <rect x="270" y="240" width="110" height="34" rx="4" fill="#4a9eba" stroke="#2a7e9a" stroke-width="1.5"/>
+  <text x="325" y="263" text-anchor="middle" font-size="12" fill="#fff">Get Started</text>
+  <rect x="400" y="240" width="130" height="34" rx="4" fill="none" stroke="#4a9eba" stroke-width="1.5"/>
+  <text x="465" y="263" text-anchor="middle" font-size="12" fill="#4a9eba">Browse Tutorials</text>
+
+  <!-- FEATURES SECTION -->
+  <text x="400" y="355" text-anchor="middle" font-size="13" fill="#444" font-weight="bold">— Key Features —</text>
+  <!-- 3 feature cards -->
+  <rect x="22" y="368" width="240" height="130" rx="4" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="100" y="380" width="84" height="52" rx="2" fill="#ddd" stroke="#aaa" stroke-width="1"/>
+  <line x1="100" y1="380" x2="184" y2="432" stroke="#bbb" stroke-width="1"/>
+  <line x1="184" y1="380" x2="100" y2="432" stroke="#bbb" stroke-width="1"/>
+  <text x="142" y="445" text-anchor="middle" font-size="11" fill="#444">Find a Tutor</text>
+  <text x="142" y="460" text-anchor="middle" font-size="10" fill="#888">Browse &amp; connect</text>
+  <text x="142" y="475" text-anchor="middle" font-size="10" fill="#888">with experts</text>
+
+  <rect x="280" y="368" width="240" height="130" rx="4" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="358" y="380" width="84" height="52" rx="2" fill="#ddd" stroke="#aaa" stroke-width="1"/>
+  <line x1="358" y1="380" x2="442" y2="432" stroke="#bbb" stroke-width="1"/>
+  <line x1="442" y1="380" x2="358" y2="432" stroke="#bbb" stroke-width="1"/>
+  <text x="400" y="445" text-anchor="middle" font-size="11" fill="#444">Schedule Session</text>
+  <text x="400" y="460" text-anchor="middle" font-size="10" fill="#888">Book at your</text>
+  <text x="400" y="475" text-anchor="middle" font-size="10" fill="#888">convenience</text>
+
+  <rect x="538" y="368" width="240" height="130" rx="4" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="616" y="380" width="84" height="52" rx="2" fill="#ddd" stroke="#aaa" stroke-width="1"/>
+  <line x1="616" y1="380" x2="700" y2="432" stroke="#bbb" stroke-width="1"/>
+  <line x1="700" y1="380" x2="616" y2="432" stroke="#bbb" stroke-width="1"/>
+  <text x="658" y="445" text-anchor="middle" font-size="11" fill="#444">Learn Anytime</text>
+  <text x="658" y="460" text-anchor="middle" font-size="10" fill="#888">Access tutorials</text>
+  <text x="658" y="475" text-anchor="middle" font-size="10" fill="#888">on demand</text>
+
+  <!-- FEATURED TUTORIALS -->
+  <text x="400" y="525" text-anchor="middle" font-size="13" fill="#444" font-weight="bold">— Featured Tutorials —</text>
+  <!-- 4 tutorial cards -->
+  <rect x="22" y="535" width="175" height="140" rx="3" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="30" y="543" width="159" height="72" rx="2" fill="#e0e0e0" stroke="#aaa" stroke-width="1"/>
+  <line x1="30" y1="543" x2="189" y2="615" stroke="#ccc" stroke-width="1"/>
+  <line x1="189" y1="543" x2="30" y2="615" stroke="#ccc" stroke-width="1"/>
+  <text x="109" y="630" text-anchor="middle" font-size="10" fill="#555">Intro to Python</text>
+  <text x="109" y="645" text-anchor="middle" font-size="10" fill="#888">by Tutor A</text>
+  <rect x="35" y="652" width="60" height="16" rx="3" fill="#4a9eba"/>
+  <text x="65" y="664" text-anchor="middle" font-size="9" fill="#fff">View</text>
+
+  <rect x="208" y="535" width="175" height="140" rx="3" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="216" y="543" width="159" height="72" rx="2" fill="#e0e0e0" stroke="#aaa" stroke-width="1"/>
+  <line x1="216" y1="543" x2="375" y2="615" stroke="#ccc" stroke-width="1"/>
+  <line x1="375" y1="543" x2="216" y2="615" stroke="#ccc" stroke-width="1"/>
+  <text x="295" y="630" text-anchor="middle" font-size="10" fill="#555">Data Structures</text>
+  <text x="295" y="645" text-anchor="middle" font-size="10" fill="#888">by Tutor B</text>
+  <rect x="221" y="652" width="60" height="16" rx="3" fill="#4a9eba"/>
+  <text x="251" y="664" text-anchor="middle" font-size="9" fill="#fff">View</text>
+
+  <rect x="394" y="535" width="175" height="140" rx="3" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="402" y="543" width="159" height="72" rx="2" fill="#e0e0e0" stroke="#aaa" stroke-width="1"/>
+  <line x1="402" y1="543" x2="561" y2="615" stroke="#ccc" stroke-width="1"/>
+  <line x1="561" y1="543" x2="402" y2="615" stroke="#ccc" stroke-width="1"/>
+  <text x="481" y="630" text-anchor="middle" font-size="10" fill="#555">Web Design</text>
+  <text x="481" y="645" text-anchor="middle" font-size="10" fill="#888">by Tutor C</text>
+  <rect x="407" y="652" width="60" height="16" rx="3" fill="#4a9eba"/>
+  <text x="437" y="664" text-anchor="middle" font-size="9" fill="#fff">View</text>
+
+  <rect x="580" y="535" width="198" height="140" rx="3" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="588" y="543" width="182" height="72" rx="2" fill="#e0e0e0" stroke="#aaa" stroke-width="1"/>
+  <line x1="588" y1="543" x2="770" y2="615" stroke="#ccc" stroke-width="1"/>
+  <line x1="770" y1="543" x2="588" y2="615" stroke="#ccc" stroke-width="1"/>
+  <text x="679" y="630" text-anchor="middle" font-size="10" fill="#555">Maths &amp; Statistics</text>
+  <text x="679" y="645" text-anchor="middle" font-size="10" fill="#888">by Tutor D</text>
+  <rect x="593" y="652" width="60" height="16" rx="3" fill="#4a9eba"/>
+  <text x="623" y="664" text-anchor="middle" font-size="9" fill="#fff">View</text>
+
+  <!-- FIND A TUTOR CTA -->
+  <rect x="180" y="700" width="440" height="80" rx="4" fill="#f0f6fa" stroke="#4a9eba" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="400" y="730" text-anchor="middle" font-size="13" fill="#444" font-weight="bold">Find the Right Tutor for You</text>
+  <rect x="325" y="742" width="150" height="28" rx="4" fill="#4a9eba" stroke="#2a7e9a" stroke-width="1"/>
+  <text x="400" y="761" text-anchor="middle" font-size="12" fill="#fff">Browse Tutors</text>
+
+  <!-- FOOTER -->
+  <rect x="20" y="800" width="760" height="68" rx="3" fill="#e8e8e8" stroke="#999" stroke-width="1.5"/>
+  <text x="130" y="825" text-anchor="middle" font-size="10" fill="#555">About Us</text>
+  <text x="250" y="825" text-anchor="middle" font-size="10" fill="#555">Contact Us</text>
+  <text x="370" y="825" text-anchor="middle" font-size="10" fill="#555">Privacy Policy</text>
+  <text x="500" y="825" text-anchor="middle" font-size="10" fill="#555">Terms &amp; Conditions</text>
+  <text x="650" y="825" text-anchor="middle" font-size="10" fill="#555">[ Social Media Icons ]</text>
+  <text x="400" y="854" text-anchor="middle" font-size="10" fill="#888">© 2025 SmartTutor. All rights reserved.</text>
+</svg>

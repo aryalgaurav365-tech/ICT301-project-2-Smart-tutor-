@@ -1,0 +1,78 @@
+<svg viewBox="0 0 560 780" xmlns="http://www.w3.org/2000/svg" font-family="Arial,sans-serif">
+  <rect width="560" height="780" fill="#f4f6f8" rx="6"/>
+  <!-- top nav -->
+  <rect x="0" y="0" width="560" height="44" fill="#ddd"/>
+  <rect x="12" y="12" width="80" height="20" rx="3" fill="#aaa"/>
+  <line x1="160" y1="22" x2="200" y2="22" stroke="#999" stroke-width="2"/>
+  <line x1="215" y1="22" x2="265" y2="22" stroke="#999" stroke-width="2"/>
+  <rect x="460" y="10" width="88" height="24" rx="12" fill="#bbb"/>
+  <text x="504" y="26" text-anchor="middle" font-size="10" fill="#555">👤 Student ▾</text>
+  <!-- sidebar -->
+  <rect x="0" y="44" width="130" height="736" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="10" y="60" width="110" height="30" rx="4" fill="#e8f4fb"/>
+  <text x="65" y="80" text-anchor="middle" font-size="11" fill="#008B8B" font-weight="bold">📊 Dashboard</text>
+  <text x="65" y="115" text-anchor="middle" font-size="11" fill="#555">📚 Tutorials</text>
+  <line x1="10" y1="124" x2="120" y2="124" stroke="#eee" stroke-width="1"/>
+  <text x="65" y="148" text-anchor="middle" font-size="11" fill="#555">📅 Session Request</text>
+  <line x1="10" y1="157" x2="120" y2="157" stroke="#eee" stroke-width="1"/>
+  <text x="65" y="181" text-anchor="middle" font-size="11" fill="#555">💬 Messaging</text>
+  <line x1="10" y1="190" x2="120" y2="190" stroke="#eee" stroke-width="1"/>
+  <text x="65" y="214" text-anchor="middle" font-size="11" fill="#555">⭐ Rate &amp; Review</text>
+  <!-- main area -->
+  <text x="155" y="70" font-size="14" fill="#333" font-weight="bold">Welcome back, Student!</text>
+  <text x="155" y="86" font-size="10" fill="#888">Here's your activity overview</text>
+  <!-- stat cards -->
+  <rect x="150" y="96" width="96" height="64" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="198" y="118" text-anchor="middle" font-size="20" fill="#008B8B" font-weight="bold">3</text>
+  <text x="198" y="136" text-anchor="middle" font-size="10" fill="#888">Active Sessions</text>
+  <rect x="254" y="96" width="96" height="64" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="302" y="118" text-anchor="middle" font-size="20" fill="#008B8B" font-weight="bold">12</text>
+  <text x="302" y="136" text-anchor="middle" font-size="10" fill="#888">Tutorials Viewed</text>
+  <rect x="358" y="96" width="96" height="64" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="406" y="118" text-anchor="middle" font-size="20" fill="#008B8B" font-weight="bold">2</text>
+  <text x="406" y="136" text-anchor="middle" font-size="10" fill="#888">Messages</text>
+  <rect x="462" y="96" width="88" height="64" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="506" y="118" text-anchor="middle" font-size="20" fill="#008B8B" font-weight="bold">4.5</text>
+  <text x="506" y="136" text-anchor="middle" font-size="10" fill="#888">Avg Rating</text>
+  <!-- upcoming sessions -->
+  <rect x="150" y="176" width="248" height="200" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="165" y="197" font-size="11" fill="#333" font-weight="bold">Upcoming Sessions</text>
+  <line x1="160" y1="204" x2="388" y2="204" stroke="#eee" stroke-width="1"/>
+  <rect x="162" y="210" width="226" height="44" rx="4" fill="#f0f9ff"/>
+  <text x="172" y="228" font-size="10" fill="#333" font-weight="bold">Maths Tutoring — John Smith</text>
+  <text x="172" y="242" font-size="10" fill="#888">Wed 14 May · 10:00 AM · Zoom</text>
+  <rect x="162" y="260" width="226" height="44" rx="4" fill="#f0f9ff"/>
+  <text x="172" y="278" font-size="10" fill="#333" font-weight="bold">Physics — Sarah Lee</text>
+  <text x="172" y="292" font-size="10" fill="#888">Fri 16 May · 2:00 PM · Zoom</text>
+  <rect x="162" y="310" width="226" height="44" rx="4" fill="#f0f9ff"/>
+  <text x="172" y="328" font-size="10" fill="#333" font-weight="bold">Chemistry — Mike Chen</text>
+  <text x="172" y="342" font-size="10" fill="#888">Sat 17 May · 11:00 AM · Zoom</text>
+  <!-- recent tutorials -->
+  <rect x="408" y="176" width="142" height="200" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="423" y="197" font-size="11" fill="#333" font-weight="bold">Recent Tutorials</text>
+  <line x1="415" y1="204" x2="542" y2="204" stroke="#eee" stroke-width="1"/>
+  <rect x="418" y="210" width="124" height="30" rx="3" fill="#f9f9f9" stroke="#eee" stroke-width="1"/>
+  <text x="428" y="229" font-size="9" fill="#555">📄 Algebra Basics</text>
+  <rect x="418" y="246" width="124" height="30" rx="3" fill="#f9f9f9" stroke="#eee" stroke-width="1"/>
+  <text x="428" y="265" font-size="9" fill="#555">📄 Newton's Laws</text>
+  <rect x="418" y="282" width="124" height="30" rx="3" fill="#f9f9f9" stroke="#eee" stroke-width="1"/>
+  <text x="428" y="301" font-size="9" fill="#555">📄 Organic Chemistry</text>
+  <rect x="418" y="318" width="124" height="30" rx="3" fill="#f9f9f9" stroke="#eee" stroke-width="1"/>
+  <text x="428" y="337" font-size="9" fill="#555">📄 Python Intro</text>
+  <!-- messages preview -->
+  <rect x="150" y="388" width="248" height="130" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="165" y="408" font-size="11" fill="#333" font-weight="bold">Recent Messages</text>
+  <line x1="160" y1="415" x2="388" y2="415" stroke="#eee" stroke-width="1"/>
+  <rect x="162" y="421" width="226" height="34" rx="3" fill="#f9f9f9"/>
+  <text x="172" y="435" font-size="10" fill="#333">John Smith: See you Wednesday!</text>
+  <text x="172" y="449" font-size="9" fill="#aaa">2 hours ago</text>
+  <rect x="162" y="460" width="226" height="34" rx="3" fill="#f9f9f9"/>
+  <text x="172" y="474" font-size="10" fill="#333">Sarah Lee: Materials attached</text>
+  <text x="172" y="488" font-size="9" fill="#aaa">Yesterday</text>
+  <!-- book session button -->
+  <rect x="150" y="532" width="180" height="34" rx="6" fill="#555"/>
+  <text x="240" y="554" text-anchor="middle" font-size="11" fill="white">+ Book New Session</text>
+  <!-- footer -->
+  <rect x="0" y="720" width="560" height="60" fill="#333"/>
+  <text x="280" y="755" text-anchor="middle" font-size="10" fill="#aaa">© 2026 SmartTutor  ·  About Us  ·  Contact  ·  Privacy Policy</text>
+</svg>

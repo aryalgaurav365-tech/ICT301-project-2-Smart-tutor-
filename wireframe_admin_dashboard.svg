@@ -1,0 +1,104 @@
+<svg viewBox="0 0 560 780" xmlns="http://www.w3.org/2000/svg" font-family="Arial,sans-serif">
+  <rect width="560" height="780" fill="#f4f6f8" rx="6"/>
+  <!-- top nav -->
+  <rect x="0" y="0" width="560" height="44" fill="#ddd"/>
+  <rect x="12" y="12" width="80" height="20" rx="3" fill="#aaa"/>
+  <rect x="450" y="10" width="98" height="24" rx="12" fill="#bbb"/>
+  <text x="499" y="26" text-anchor="middle" font-size="10" fill="#555">👤 Admin ▾</text>
+  <!-- sidebar -->
+  <rect x="0" y="44" width="130" height="736" fill="#2d3748"/>
+  <text x="65" y="75" text-anchor="middle" font-size="10" fill="#aaa" font-weight="bold">ADMIN PANEL</text>
+  <rect x="10" y="84" width="110" height="28" rx="4" fill="#4a9eba"/>
+  <text x="65" y="102" text-anchor="middle" font-size="10" fill="white" font-weight="bold">📊 Analytics</text>
+  <text x="65" y="130" text-anchor="middle" font-size="10" fill="#aaa">👥 User Mgmt</text>
+  <line x1="15" y1="138" x2="115" y2="138" stroke="#444" stroke-width="1"/>
+  <text x="65" y="158" text-anchor="middle" font-size="10" fill="#aaa">📚 Content Mgmt</text>
+  <line x1="15" y1="166" x2="115" y2="166" stroke="#444" stroke-width="1"/>
+  <text x="65" y="186" text-anchor="middle" font-size="10" fill="#aaa">📅 Session Mgmt</text>
+  <line x1="15" y1="194" x2="115" y2="194" stroke="#444" stroke-width="1"/>
+  <text x="65" y="214" text-anchor="middle" font-size="10" fill="#aaa">📢 Announcements</text>
+  <!-- main area title -->
+  <text x="155" y="70" font-size="14" fill="#333" font-weight="bold">Analytics Dashboard</text>
+  <text x="155" y="86" font-size="10" fill="#888">Platform overview — all time</text>
+  <!-- KPI cards -->
+  <rect x="150" y="96" width="92" height="60" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="196" y="118" text-anchor="middle" font-size="18" fill="#008B8B" font-weight="bold">142</text>
+  <text x="196" y="134" text-anchor="middle" font-size="9" fill="#888">Total Students</text>
+  <rect x="250" y="96" width="92" height="60" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="296" y="118" text-anchor="middle" font-size="18" fill="#008B8B" font-weight="bold">38</text>
+  <text x="296" y="134" text-anchor="middle" font-size="9" fill="#888">Active Tutors</text>
+  <rect x="350" y="96" width="92" height="60" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="396" y="118" text-anchor="middle" font-size="18" fill="#008B8B" font-weight="bold">89</text>
+  <text x="396" y="134" text-anchor="middle" font-size="9" fill="#888">Sessions Today</text>
+  <rect x="450" y="96" width="100" height="60" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="500" y="118" text-anchor="middle" font-size="18" fill="#008B8B" font-weight="bold">214</text>
+  <text x="500" y="134" text-anchor="middle" font-size="9" fill="#888">Tutorials Live</text>
+  <!-- bar chart placeholder -->
+  <rect x="150" y="172" width="248" height="160" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="165" y="192" font-size="11" fill="#333" font-weight="bold">Sessions Per Week</text>
+  <line x1="160" y1="198" x2="388" y2="198" stroke="#eee" stroke-width="1"/>
+  <rect x="175" y="296" width="20" height="50" rx="2" fill="#b0d4e8"/>
+  <rect x="205" y="276" width="20" height="70" rx="2" fill="#b0d4e8"/>
+  <rect x="235" y="256" width="20" height="90" rx="2" fill="#b0d4e8"/>
+  <rect x="265" y="236" width="20" height="110" rx="2" fill="#4a9eba"/>
+  <rect x="295" y="246" width="20" height="100" rx="2" fill="#b0d4e8"/>
+  <rect x="325" y="216" width="20" height="130" rx="2" fill="#008B8B"/>
+  <rect x="355" y="241" width="20" height="105" rx="2" fill="#b0d4e8"/>
+  <line x1="165" y1="348" x2="390" y2="348" stroke="#ccc" stroke-width="1"/>
+  <text x="185" y="360" text-anchor="middle" font-size="8" fill="#aaa">W5</text>
+  <text x="215" y="360" text-anchor="middle" font-size="8" fill="#aaa">W6</text>
+  <text x="245" y="360" text-anchor="middle" font-size="8" fill="#aaa">W7</text>
+  <text x="275" y="360" text-anchor="middle" font-size="8" fill="#aaa">W8</text>
+  <text x="305" y="360" text-anchor="middle" font-size="8" fill="#aaa">W9</text>
+  <text x="335" y="360" text-anchor="middle" font-size="8" fill="#aaa">W10</text>
+  <text x="365" y="360" text-anchor="middle" font-size="8" fill="#aaa">W11</text>
+  <!-- pending approvals -->
+  <rect x="408" y="172" width="142" height="160" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="420" y="192" font-size="10" fill="#333" font-weight="bold">Pending Approvals</text>
+  <line x1="415" y1="198" x2="542" y2="198" stroke="#eee" stroke-width="1"/>
+  <rect x="418" y="204" width="124" height="32" rx="3" fill="#fff3cd"/>
+  <text x="428" y="220" font-size="9" fill="#555">⏳ Tutor: J. Wilson</text>
+  <text x="428" y="232" font-size="8" fill="#888">Awaiting approval</text>
+  <rect x="418" y="242" width="124" height="32" rx="3" fill="#fff3cd"/>
+  <text x="428" y="258" font-size="9" fill="#555">⏳ Tutor: M. Garcia</text>
+  <text x="428" y="270" font-size="8" fill="#888">Awaiting approval</text>
+  <rect x="418" y="280" width="60" height="22" rx="4" fill="#4caf50"/>
+  <text x="448" y="295" text-anchor="middle" font-size="9" fill="white">Approve</text>
+  <rect x="484" y="280" width="56" height="22" rx="4" fill="#e53e3e"/>
+  <text x="512" y="295" text-anchor="middle" font-size="9" fill="white">Reject</text>
+  <!-- recent users table -->
+  <rect x="150" y="346" width="248" height="170" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="165" y="366" font-size="11" fill="#333" font-weight="bold">Recent Registrations</text>
+  <line x1="160" y1="373" x2="388" y2="373" stroke="#eee" stroke-width="1"/>
+  <rect x="160" y="374" width="228" height="20" fill="#f4f6f8"/>
+  <text x="175" y="388" font-size="9" fill="#555" font-weight="bold">Name</text>
+  <text x="265" y="388" font-size="9" fill="#555" font-weight="bold">Role</text>
+  <text x="330" y="388" font-size="9" fill="#555" font-weight="bold">Status</text>
+  <text x="175" y="408" font-size="9" fill="#333">Alice Johnson</text>
+  <text x="265" y="408" font-size="9" fill="#666">Student</text>
+  <rect x="328" y="398" width="42" height="14" rx="7" fill="#c6f6d5"/>
+  <text x="349" y="409" text-anchor="middle" font-size="8" fill="#276749">Active</text>
+  <text x="175" y="428" font-size="9" fill="#333">Bob Tutor</text>
+  <text x="265" y="428" font-size="9" fill="#666">Tutor</text>
+  <rect x="328" y="418" width="52" height="14" rx="7" fill="#fefcbf"/>
+  <text x="354" y="429" text-anchor="middle" font-size="8" fill="#744210">Pending</text>
+  <text x="175" y="448" font-size="9" fill="#333">Carol Smith</text>
+  <text x="265" y="448" font-size="9" fill="#666">Student</text>
+  <rect x="328" y="438" width="42" height="14" rx="7" fill="#c6f6d5"/>
+  <text x="349" y="449" text-anchor="middle" font-size="8" fill="#276749">Active</text>
+  <!-- announcements panel -->
+  <rect x="408" y="346" width="142" height="170" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="423" y="366" font-size="10" fill="#333" font-weight="bold">Announcements</text>
+  <line x1="415" y1="373" x2="542" y2="373" stroke="#eee" stroke-width="1"/>
+  <rect x="418" y="379" width="124" height="40" rx="3" fill="#e8f4fb"/>
+  <text x="428" y="395" font-size="9" fill="#333">Platform maintenance</text>
+  <text x="428" y="408" font-size="8" fill="#888">12 May · All users</text>
+  <rect x="418" y="425" width="124" height="40" rx="3" fill="#e8f4fb"/>
+  <text x="428" y="441" font-size="9" fill="#333">New tutors approved</text>
+  <text x="428" y="454" font-size="8" fill="#888">10 May · All users</text>
+  <rect x="418" y="472" width="124" height="24" rx="4" fill="#555"/>
+  <text x="480" y="488" text-anchor="middle" font-size="9" fill="white">+ New Announcement</text>
+  <!-- footer -->
+  <rect x="0" y="720" width="560" height="60" fill="#333"/>
+  <text x="280" y="755" text-anchor="middle" font-size="10" fill="#aaa">© 2026 SmartTutor  ·  Admin Portal  ·  Privacy Policy</text>
+</svg>

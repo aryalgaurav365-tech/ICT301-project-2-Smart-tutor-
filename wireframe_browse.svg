@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="900" style="background:#fff;font-family:'Courier New',monospace;">
+  <rect x="10" y="10" width="780" height="880" rx="4" fill="none" stroke="#555" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="400" y="35" text-anchor="middle" font-size="13" fill="#333" font-weight="bold">[ BROWSE TUTORIALS PAGE — Low-Fidelity Wireframe Sketch ]</text>
+
+  <!-- NAV -->
+  <rect x="20" y="48" width="760" height="40" rx="3" fill="#e8e8e8" stroke="#888" stroke-width="1.5"/>
+  <rect x="30" y="55" width="72" height="26" rx="2" fill="#bbb" stroke="#888"/>
+  <text x="66" y="73" text-anchor="middle" font-size="11" fill="#444">LOGO</text>
+  <text x="300" y="73" font-size="11" fill="#444">Home</text>
+  <text x="370" y="73" font-size="11" fill="#4a9eba" font-weight="bold" text-decoration="underline">Browse</text>
+  <text x="450" y="73" font-size="11" fill="#444">Find Tutor</text>
+  <rect x="680" y="55" width="88" height="26" rx="12" fill="#4a9eba"/>
+  <text x="724" y="73" text-anchor="middle" font-size="11" fill="#fff">Dashboard</text>
+
+  <!-- Search bar -->
+  <text x="400" y="116" text-anchor="middle" font-size="14" fill="#333" font-weight="bold">Browse Tutorials</text>
+  <rect x="130" y="126" width="480" height="34" rx="17" fill="#fff" stroke="#4a9eba" stroke-width="2"/>
+  <text x="152" y="148" font-size="11" fill="#aaa">Search by subject, keyword, or tutor name…</text>
+  <rect x="612" y="128" width="80" height="30" rx="15" fill="#4a9eba"/>
+  <text x="652" y="148" text-anchor="middle" font-size="11" fill="#fff">Search</text>
+
+  <!-- Sidebar + Content area -->
+  <!-- Sidebar (filters) -->
+  <rect x="22" y="176" width="170" height="580" rx="4" fill="#f7f7f7" stroke="#ccc" stroke-width="1.5"/>
+  <text x="107" y="200" text-anchor="middle" font-size="12" fill="#444" font-weight="bold">Filters</text>
+  <line x1="30" y1="206" x2="184" y2="206" stroke="#ccc" stroke-width="1"/>
+  <text x="35" y="230" font-size="11" fill="#555">Subject</text>
+  <rect x="32" y="236" width="152" height="24" rx="3" fill="#fff" stroke="#bbb"/>
+  <text x="40" y="253" font-size="10" fill="#aaa">Select subject ▾</text>
+  <text x="35" y="280" font-size="11" fill="#555">Difficulty</text>
+  <rect x="32" y="286" width="14" height="14" rx="2" fill="#fff" stroke="#888"/>
+  <text x="53" y="298" font-size="10" fill="#555">Beginner</text>
+  <rect x="32" y="306" width="14" height="14" rx="2" fill="#fff" stroke="#888"/>
+  <text x="53" y="318" font-size="10" fill="#555">Intermediate</text>
+  <rect x="32" y="326" width="14" height="14" rx="2" fill="#fff" stroke="#888"/>
+  <text x="53" y="338" font-size="10" fill="#555">Advanced</text>
+  <text x="35" y="362" font-size="11" fill="#555">Content Type</text>
+  <rect x="32" y="368" width="14" height="14" rx="2" fill="#fff" stroke="#888"/>
+  <text x="53" y="380" font-size="10" fill="#555">PDF</text>
+  <rect x="32" y="388" width="14" height="14" rx="2" fill="#fff" stroke="#888"/>
+  <text x="53" y="400" font-size="10" fill="#555">External Link</text>
+  <text x="35" y="426" font-size="11" fill="#555">Rating</text>
+  <text x="35" y="446" font-size="14" fill="#f5a623">★★★★☆</text>
+  <text x="35" y="468" font-size="10" fill="#888">4+ stars</text>
+  <rect x="32" y="490" width="152" height="28" rx="4" fill="#4a9eba"/>
+  <text x="108" y="509" text-anchor="middle" font-size="11" fill="#fff">Apply Filters</text>
+  <rect x="32" y="528" width="152" height="28" rx="4" fill="#fff" stroke="#bbb"/>
+  <text x="108" y="547" text-anchor="middle" font-size="11" fill="#888">Clear Filters</text>
+
+  <!-- Tutorial cards grid (2x3) -->
+  <rect x="204" y="176" width="574" height="580" rx="4" fill="none" stroke="#ddd" stroke-width="1"/>
+
+  <!-- Sort bar -->
+  <rect x="210" y="182" width="560" height="28" rx="3" fill="#f0f0f0" stroke="#ccc"/>
+  <text x="220" y="201" font-size="10" fill="#555">Showing 24 results</text>
+  <text x="600" y="201" font-size="10" fill="#555">Sort by: Newest ▾</text>
+
+  <!-- 6 cards: 2 rows x 3 cols -->
+  <!-- Row 1 -->
+  <rect x="210" y="220" width="174" height="150" rx="4" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="218" y="228" width="158" height="72" rx="2" fill="#e0e0e0" stroke="#aaa"/>
+  <line x1="218" y1="228" x2="376" y2="300" stroke="#ccc"/>
+  <line x1="376" y1="228" x2="218" y2="300" stroke="#ccc"/>
+  <text x="297" y="318" text-anchor="middle" font-size="10" fill="#444" font-weight="bold">Introduction to Python</text>
+  <text x="297" y="332" text-anchor="middle" font-size="9" fill="#888">by Tutor A · Beginner</text>
+  <text x="297" y="346" text-anchor="middle" font-size="10" fill="#f5a623">★★★★★</text>
+  <rect x="220" y="355" width="50" height="14" rx="2" fill="#4a9eba"/>
+  <text x="245" y="366" text-anchor="middle" font-size="8" fill="#fff">View</text>
+
+  <rect x="394" y="220" width="174" height="150" rx="4" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="402" y="228" width="158" height="72" rx="2" fill="#e0e0e0" stroke="#aaa"/>
+  <line x1="402" y1="228" x2="560" y2="300" stroke="#ccc"/>
+  <line x1="560" y1="228" x2="402" y2="300" stroke="#ccc"/>
+  <text x="481" y="318" text-anchor="middle" font-size="10" fill="#444" font-weight="bold">Data Structures</text>
+  <text x="481" y="332" text-anchor="middle" font-size="9" fill="#888">by Tutor B · Intermediate</text>
+  <text x="481" y="346" text-anchor="middle" font-size="10" fill="#f5a623">★★★★☆</text>
+  <rect x="404" y="355" width="50" height="14" rx="2" fill="#4a9eba"/>
+  <text x="429" y="366" text-anchor="middle" font-size="8" fill="#fff">View</text>
+
+  <rect x="578" y="220" width="196" height="150" rx="4" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="586" y="228" width="180" height="72" rx="2" fill="#e0e0e0" stroke="#aaa"/>
+  <line x1="586" y1="228" x2="766" y2="300" stroke="#ccc"/>
+  <line x1="766" y1="228" x2="586" y2="300" stroke="#ccc"/>
+  <text x="675" y="318" text-anchor="middle" font-size="10" fill="#444" font-weight="bold">Web Design Basics</text>
+  <text x="675" y="332" text-anchor="middle" font-size="9" fill="#888">by Tutor C · Beginner</text>
+  <text x="675" y="346" text-anchor="middle" font-size="10" fill="#f5a623">★★★★★</text>
+  <rect x="588" y="355" width="50" height="14" rx="2" fill="#4a9eba"/>
+  <text x="613" y="366" text-anchor="middle" font-size="8" fill="#fff">View</text>
+
+  <!-- Row 2 -->
+  <rect x="210" y="386" width="174" height="150" rx="4" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="218" y="394" width="158" height="72" rx="2" fill="#e0e0e0" stroke="#aaa"/>
+  <line x1="218" y1="394" x2="376" y2="466" stroke="#ccc"/>
+  <line x1="376" y1="394" x2="218" y2="466" stroke="#ccc"/>
+  <text x="297" y="484" text-anchor="middle" font-size="10" fill="#444" font-weight="bold">Calculus II</text>
+  <text x="297" y="498" text-anchor="middle" font-size="9" fill="#888">by Tutor D · Advanced</text>
+  <text x="297" y="512" text-anchor="middle" font-size="10" fill="#f5a623">★★★☆☆</text>
+  <rect x="220" y="521" width="50" height="14" rx="2" fill="#4a9eba"/>
+  <text x="245" y="532" text-anchor="middle" font-size="8" fill="#fff">View</text>
+
+  <rect x="394" y="386" width="174" height="150" rx="4" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="402" y="394" width="158" height="72" rx="2" fill="#e0e0e0" stroke="#aaa"/>
+  <line x1="402" y1="394" x2="560" y2="466" stroke="#ccc"/>
+  <line x1="560" y1="394" x2="402" y2="466" stroke="#ccc"/>
+  <text x="481" y="484" text-anchor="middle" font-size="10" fill="#444" font-weight="bold">English Essay Writing</text>
+  <text x="481" y="498" text-anchor="middle" font-size="9" fill="#888">by Tutor E · Beginner</text>
+  <text x="481" y="512" text-anchor="middle" font-size="10" fill="#f5a623">★★★★☆</text>
+  <rect x="404" y="521" width="50" height="14" rx="2" fill="#4a9eba"/>
+  <text x="429" y="532" text-anchor="middle" font-size="8" fill="#fff">View</text>
+
+  <rect x="578" y="386" width="196" height="150" rx="4" fill="#f9f9f9" stroke="#bbb" stroke-width="1.5"/>
+  <rect x="586" y="394" width="180" height="72" rx="2" fill="#e0e0e0" stroke="#aaa"/>
+  <line x1="586" y1="394" x2="766" y2="466" stroke="#ccc"/>
+  <line x1="766" y1="394" x2="586" y2="466" stroke="#ccc"/>
+  <text x="675" y="484" text-anchor="middle" font-size="10" fill="#444" font-weight="bold">Statistics for Beginners</text>
+  <text x="675" y="498" text-anchor="middle" font-size="9" fill="#888">by Tutor F · Beginner</text>
+  <text x="675" y="512" text-anchor="middle" font-size="10" fill="#f5a623">★★★★★</text>
+  <rect x="588" y="521" width="50" height="14" rx="2" fill="#4a9eba"/>
+  <text x="613" y="532" text-anchor="middle" font-size="8" fill="#fff">View</text>
+
+  <!-- pagination -->
+  <rect x="330" y="766" width="140" height="28" rx="4" fill="#f0f0f0" stroke="#ccc"/>
+  <text x="350" y="785" font-size="11" fill="#4a9eba">← Prev</text>
+  <text x="400" y="785" text-anchor="middle" font-size="11" fill="#333">1 / 4</text>
+  <text x="450" y="785" text-anchor="end" font-size="11" fill="#4a9eba">Next →</text>
+
+  <!-- Footer -->
+  <rect x="20" y="808" width="760" height="50" rx="3" fill="#e8e8e8" stroke="#999" stroke-width="1.5"/>
+  <text x="400" y="837" text-anchor="middle" font-size="10" fill="#666">About Us | Contact Us | Privacy Policy | Terms &amp; Conditions</text>
+  <text x="400" y="850" text-anchor="middle" font-size="9" fill="#888">© 2025 SmartTutor</text>
+</svg>
