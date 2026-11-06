@@ -15,8 +15,6 @@ services:
         sync: false
       - key: APP_URL
         sync: false
-      - key: ADMIN_INVITE
-        sync: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -31,3 +29,5 @@ services:
         sync: false
       - key: CAPTCHA_SECRET
         sync: false
+      - key: DB_SSL
+        value: "true"

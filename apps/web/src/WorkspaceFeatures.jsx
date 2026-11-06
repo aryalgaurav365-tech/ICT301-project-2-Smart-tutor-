@@ -561,7 +561,13 @@ export function AdminTools() {
         <br />
         <em>operation.</em>
       </h1>
-      <section className="panel">
+      <button
+        className="btn secondary"
+        onClick={() => window.dispatchEvent(new Event("reauth-needed"))}
+      >
+        Confirm identity for sensitive actions
+      </button>
+      <section className="panel spaced">
         <h2>Invite an administrator</h2>
         <p>
           Invitations are bound to one email, expire in 48 hours and can only be
@@ -655,4 +661,175 @@ export function AdminTools() {
       </section>
     </>
   );
+}
+export function StudentEnrollment() {
+  const [subjects] = useData("/subjects");
+  return (
+    <details className="panel spaced">
+      <summary>Add a student account</summary>
+      <p>
+        The student will receive email verification and password-setup links. No
+        password is shared with the administrator.
+      </p>
+      <Form
+        endpoint="/admin/students"
+        submit="Create student account"
+        transform={(f) => ({
+          ...Object.fromEntries(f),
+          subjects: [Number(f.get("subject_id"))],
+        })}
+      >
+        <Field label="Student full name" name="name" required />
+        <Field
+          label="Student username"
+          name="username"
+          pattern="[a-zA-Z0-9_]{3,40}"
+          required
+        />
+        <Field label="Student email" name="email" type="email" required />
+        <Field label="Student date of birth" name="dob" type="date" required />
+        <Field label="Student address" name="address" required />
+        <label>
+          Subject
+          <select name="subject_id" aria-label="Enrollment subject">
+            {subjects?.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </Form>
+    </details>
+  );
+}
+export function EditContent({ resource, onDone }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button className="btn secondary" onClick={() => setOpen(true)}>
+        Edit content
+      </button>
+      {open && (
+        <div className="modal-backdrop">
+          <div
+            className="panel modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit published resource"
+          >
+            <button
+              className="icon modal-close"
+              aria-label="Close content editor"
+              onClick={() => setOpen(false)}
+            >
+              <X />
+            </button>
+            <h2>Refine this resource.</h2>
+            <Form
+              endpoint={"/tutorials/" + resource.id}
+              method="PATCH"
+              submit="Save content changes"
+              onDone={() => {
+                setOpen(false);
+                onDone();
+              }}
+            >
+              <Field
+                label="Resource name"
+                name="title"
+                defaultValue={resource.title}
+                required
+              />
+              <label>
+                Resource description
+                <textarea
+                  name="description"
+                  defaultValue={resource.description}
+                  required
+                />
+              </label>
+              <label>
+                Publication status
+                <select name="status" defaultValue={resource.status}>
+                  <option value="published">Published</option>
+                  <option value="draft">Unpublished</option>
+                </select>
+              </label>
+            </Form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+export function DialogAccessibility() {
+  useEffect(() => {
+    let current = null,
+      previous = null;
+    const focusables = (element) =>
+      [
+        ...element.querySelectorAll(
+          'button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((el) => el.getClientRects().length);
+    const sync = () => {
+      const dialogs = document.querySelectorAll(
+        '[role="dialog"][aria-modal="true"]',
+      );
+      const next = dialogs[dialogs.length - 1] || null;
+      if (next === current) return;
+      if (!next) {
+        current = null;
+        if (previous?.isConnected) previous.focus();
+        return;
+      }
+      previous = document.activeElement;
+      current = next;
+      current.setAttribute("tabindex", "-1");
+      queueMicrotask(() => {
+        if (current === next) (focusables(next)[0] || next).focus();
+      });
+    };
+    const keydown = (e) => {
+      if (!current) return;
+      if (e.key === "Escape") {
+        const close = current.querySelector(".modal-close");
+        if (close) {
+          e.preventDefault();
+          close.click();
+        }
+      }
+      if (e.key === "Tab") {
+        const list = focusables(current);
+        if (!list.length) {
+          e.preventDefault();
+          current.focus();
+          return;
+        }
+        const first = list[0],
+          last = list[list.length - 1];
+        if (
+          e.shiftKey &&
+          (document.activeElement === first ||
+            document.activeElement === current)
+        ) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    const observer = new MutationObserver(sync);
+    observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("keydown", keydown, true);
+    sync();
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("keydown", keydown, true);
+    };
+  }, []);
+  return null;
 }

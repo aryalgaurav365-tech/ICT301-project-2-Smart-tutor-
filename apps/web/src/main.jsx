@@ -53,6 +53,9 @@ import {
   ChangeButton,
   AdminTools,
   Reauthenticate,
+  DialogAccessibility,
+  StudentEnrollment,
+  EditContent,
 } from "./WorkspaceFeatures";
 function App() {
   const [user, setUser] = useState(null),
@@ -74,6 +77,7 @@ function App() {
       <BrowserRouter>
         <Scroll />
         <Reauthenticate />
+        <DialogAccessibility />
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -1493,7 +1497,8 @@ function People() {
         <em>A growing community.</em>
       </h1>
       <ErrorBox>{error}</ErrorBox>
-      <h2>Pending tutor approvals</h2>
+      <StudentEnrollment />
+      <h2 className="spaced">Pending tutor approvals</h2>
       {users
         ?.filter((u) => u.status === "pending")
         .map((u) => (
@@ -1669,6 +1674,7 @@ function Content() {
             </p>
           </div>
           <div className="row-actions">
+            <EditContent resource={t} onDone={reload} />
             <Action
               method="PATCH"
               url={"/tutorials/" + t.id}

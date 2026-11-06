@@ -12,3 +12,26 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+  mysql:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-password
+          MYSQL_DATABASE: smarttutor_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pci-only-password"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/mysql-smoke.mjs
+        env:
+          DATABASE_URL: mysql://root:ci-only-password@127.0.0.1:3306/smarttutor_ci

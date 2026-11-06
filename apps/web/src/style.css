@@ -4,7 +4,7 @@
   color: #233e38;
   background: #fafbf7;
   --green: #155c50;
-  --muted: #6e7d74;
+  --muted: #53635a;
   --line: #e2e8de;
 }
 * {
@@ -681,7 +681,7 @@ header {
 .step > span {
   font-family: Georgia;
   font-size: 22px;
-  color: #929b78;
+  color: #5f704d;
 }
 .step h3 {
   font-size: 17px;
@@ -739,7 +739,7 @@ footer {
 .footer-main > div > a:not(.brand) {
   display: block;
   font-size: 11px;
-  color: #6c7b6b;
+  color: #52614f;
   margin-bottom: 12px;
 }
 .footer-message {
@@ -763,7 +763,7 @@ footer {
   justify-content: space-between;
   padding-block: 22px;
   font-size: 9px;
-  color: #72806f;
+  color: #52614f;
   gap: 20px;
 }
 .footer-bottom > div {
@@ -896,7 +896,7 @@ footer {
 .empty {
   padding: 40px 20px;
   text-align: center;
-  color: #8e9c83;
+  color: #62705a;
 }
 .empty p {
   font-size: 13px;
@@ -1010,7 +1010,7 @@ textarea {
   resize: vertical;
 }
 input::placeholder {
-  color: #8d998e;
+  color: #62705f;
 }
 form .checkbox {
   flex-direction: row;
@@ -1126,7 +1126,7 @@ form .checkbox {
   font-size: 12px;
   padding: 12px 13px;
   border-radius: 5px;
-  color: #6b7b6e;
+  color: #53634f;
 }
 .sidebar nav > a.active {
   color: var(--green);

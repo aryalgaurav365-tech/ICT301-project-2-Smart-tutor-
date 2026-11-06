@@ -478,3 +478,31 @@ test("mail leases prevent two workers claiming one delivery, with bounded failur
     false,
   );
 });
+
+test("admin enrollment queues setup links without exposing a password", async () => {
+  const subject = (await db("subjects").first()).id;
+  const r = await call("/admin/students", {
+    role: "admin",
+    method: "POST",
+    body: {
+      name: "Enrolled Learner",
+      username: "enrolledlearner",
+      email: "enrolled@example.test",
+      dob: "2000-01-01",
+      address: "Development-only address",
+      subjects: [subject],
+    },
+  });
+  assert.equal(r.status, 201);
+  const result = await r.json();
+  assert.equal(result.password, undefined);
+  const user = await db("users").where({ username: "enrolledlearner" }).first();
+  assert.equal(user.role, "student");
+  assert.equal(Number(user.verified), 0);
+  const messages = await db("mail").where({
+    recipient: "enrolled@example.test",
+  });
+  assert.equal(messages.length, 2);
+  assert.ok(messages.some((m) => m.subject.includes("Verify")));
+  assert.ok(messages.some((m) => m.subject.includes("password")));
+});

@@ -11,12 +11,14 @@
     "start": "npm start -w apps/api",
     "db:seed": "npm run seed -w apps/api",
     "test": "node --test tests/*.test.js",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "admin:invite": "npm run invite -w apps/api --",
+    "jobs": "npm run worker -w apps/api"
   },
-  "dependencies": {},
   "devDependencies": {
-    "concurrently": "^9.2.1",
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.56.1",
+    "concurrently": "^9.2.1",
     "prettier": "^3.6.2"
   },
   "engines": {

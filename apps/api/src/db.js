@@ -10,9 +10,26 @@ export function database(filename) {
     path.resolve(process.env.DATA_DIR || "data", "smarttutor.sqlite");
   if (!mysql && file !== ":memory:")
     fs.mkdirSync(path.dirname(file), { recursive: true });
+  let connection = mysql;
+  if (mysql && (process.env.DB_SSL === "true" || process.env.DB_SSL_CA_FILE)) {
+    const url = new URL(mysql);
+    connection = {
+      host: url.hostname,
+      port: Number(url.port || 3306),
+      user: decodeURIComponent(url.username),
+      password: decodeURIComponent(url.password),
+      database: decodeURIComponent(url.pathname.slice(1)),
+      ssl: {
+        rejectUnauthorized: true,
+        ...(process.env.DB_SSL_CA_FILE
+          ? { ca: fs.readFileSync(process.env.DB_SSL_CA_FILE, "utf8") }
+          : {}),
+      },
+    };
+  }
   return knex(
     mysql
-      ? { client: "mysql2", connection: mysql, pool: { min: 0, max: 5 } }
+      ? { client: "mysql2", connection, pool: { min: 0, max: 5 } }
       : {
           client: "better-sqlite3",
           connection: { filename: file },

@@ -37,6 +37,9 @@ function useData(url) {
   useEffect(() => {
     setData(null);
     load();
+    const refresh = () => load();
+    window.addEventListener("data-changed", refresh);
+    return () => window.removeEventListener("data-changed", refresh);
   }, [url]);
   return [data, error, load];
 }
@@ -104,7 +107,8 @@ function Form({
           const body = transform ? transform(f) : Object.fromEntries(f);
           const r = await api(endpoint, { method, body });
           toast(r.message || "Saved successfully");
-          onDone?.(r, form);
+          await onDone?.(r, form);
+          window.dispatchEvent(new Event("data-changed"));
         } catch (e) {
           setError(e.message);
         } finally {

@@ -424,6 +424,72 @@ export function features(app, db, { auth, notify, mail, audit, store }) {
         : null,
     });
   });
+  app.post("/api/admin/students", auth("admin"), recent, async (req, res) => {
+    const p = z
+      .object({
+        name: text.max(100),
+        username: z.string().regex(/^[a-zA-Z0-9_]{3,40}$/),
+        email: z.email(),
+        dob: z.string().date(),
+        address: text.max(255),
+        subjects: z.array(id).min(1),
+      })
+      .parse(req.body);
+    if (
+      await db("users")
+        .where({ email: p.email.toLowerCase() })
+        .orWhere({ username: p.username })
+        .first()
+    )
+      fail(409, "Email or username already registered");
+    const password = await bcrypt.hash(randomBytes(32).toString("hex"), 12);
+    const uid = await db.transaction(async (trx) => {
+      const [uid] = await trx("users").insert({
+        name: p.name,
+        username: p.username,
+        email: p.email.toLowerCase(),
+        dob: p.dob,
+        address: p.address,
+        password,
+        role: "student",
+        status: "active",
+        verified: false,
+        created_at: now(),
+      });
+      for (const subject_id of [...new Set(p.subjects)])
+        await trx("user_subjects").insert({ user_id: uid, subject_id });
+      return uid;
+    });
+    for (const kind of ["verify", "reset"]) {
+      const code = randomBytes(32).toString("hex");
+      await db("challenges").insert({
+        user_id: uid,
+        kind,
+        digest: createHash("sha256").update(code).digest("hex"),
+        expires_at: new Date(Date.now() + 30 * 60000).toISOString(),
+      });
+      await mail(
+        p.email,
+        kind === "verify"
+          ? "Verify your new SmartTutor account"
+          : "Set your SmartTutor password",
+        `Open ${process.env.APP_URL || "http://localhost:5173"}/${kind === "verify" ? "verify" : "reset-password"}?token=${code}`,
+      );
+    }
+    await audit(req.user.id, "student.create");
+    res.status(201).json({
+      message:
+        "Student account created. Verification and password setup emails queued.",
+    });
+  });
+  app.post("/api/admin/subjects", auth("admin"), recent, async (req, res) => {
+    const { name } = z.object({ name: text.max(100) }).parse(req.body);
+    if (await db("subjects").where({ name }).first())
+      fail(409, "Subject already exists");
+    await db("subjects").insert({ name, color: "mint" });
+    await audit(req.user.id, "subject.create");
+    res.status(201).json({ message: "Subject added" });
+  });
   app.get("/api/admin/audit", auth("admin"), recent, async (req, res) =>
     res.json(
       await db("audit")

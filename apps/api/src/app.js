@@ -10,7 +10,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
-import ExcelJS from "exceljs";
+import { spreadsheet } from "./spreadsheet.js";
 import { now } from "./db.js";
 import { features } from "./features.js";
 import { storage } from "./storage.js";
@@ -50,7 +50,27 @@ export function createApp(
   if (process.env.TRUST_PROXY)
     app.set("trust proxy", Number(process.env.TRUST_PROXY));
   app.use(
-    helmet({ contentSecurityPolicy: false }),
+    helmet({
+      contentSecurityPolicy: production
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'", "https://challenges.cloudflare.com"],
+              styleSrc: [
+                "'self'",
+                "'unsafe-inline'",
+                "https://fonts.googleapis.com",
+              ],
+              fontSrc: ["'self'", "https://fonts.gstatic.com"],
+              imgSrc: ["'self'", "data:", "https:"],
+              connectSrc: ["'self'", "https://challenges.cloudflare.com"],
+              frameSrc: ["https://challenges.cloudflare.com"],
+              objectSrc: ["'none'"],
+              baseUri: ["'self'"],
+            },
+          }
+        : false,
+    }),
     express.json({ limit: "64kb" }),
     cookieParser(),
   );
@@ -110,6 +130,14 @@ export function createApp(
         return res
           .status(403)
           .json({ error: "You do not have permission for this action" });
+      if (
+        req.user.role === "admin" &&
+        roles.includes("admin") &&
+        (!req.session?.recent_until || req.session.recent_until < now())
+      )
+        return res
+          .status(428)
+          .json({ error: "Confirm your password to continue", reauth: true });
       next();
     };
   const audit = (uid, action) =>
@@ -140,6 +168,10 @@ export function createApp(
         Date.now() + (kind === "otp" ? 10 : 30) * 60000,
       ).toISOString(),
     });
+    await db("mail")
+      .where({ recipient: u.email, status: "pending" })
+      .where("job_key", "like", `auth:${u.id}:${kind}:%`)
+      .update({ status: "cancelled" });
     await mail(
       u.email,
       kind === "otp"
@@ -150,6 +182,7 @@ export function createApp(
       kind === "otp"
         ? `Your login code is ${code}. It expires in 10 minutes.`
         : `Open ${process.env.APP_URL || "http://localhost:5173"}/${kind === "verify" ? "verify" : "reset-password"}?token=${code}`,
+      `auth:${u.id}:${kind}:${hash(code)}`,
     );
   }
   app.get("/api/health", async (req, res) => {
@@ -262,7 +295,7 @@ export function createApp(
   });
   app.post("/api/auth/verify", async (req, res) => {
     const { token: code } = z.object({ token: text }).parse(req.body);
-    await db.transaction(async (trx) => {
+    const uid = await db.transaction(async (trx) => {
       const c = await trx("challenges")
         .where({ kind: "verify", digest: hash(code) })
         .where("expires_at", ">", now())
@@ -270,7 +303,14 @@ export function createApp(
       if (!c) fail(400, "Invalid or expired verification link");
       await trx("users").where({ id: c.user_id }).update({ verified: true });
       await trx("challenges").where({ id: c.id }).del();
+      return c.user_id;
     });
+    const user = await db("users").where({ id: uid }).first();
+    await mail(
+      user.email,
+      "Welcome to SmartTutor",
+      "Your email is verified. Your next chapter starts here. Tutors can sign in after administrator approval.",
+    );
     res.json({
       message: "Email verified. Sign in once your account is active.",
     });
@@ -388,7 +428,15 @@ export function createApp(
       );
     if (req.user?.role !== "admin")
       q = q.where("tutorials.status", "published");
-    res.json(await q.orderBy("tutorials.created_at", "desc"));
+    const rows = await q.orderBy("tutorials.created_at", "desc");
+    const ratings = await db("reviews")
+      .select("tutor_id")
+      .avg({ rating: "rating" })
+      .groupBy("tutor_id");
+    for (const row of rows)
+      row.tutor_rating =
+        ratings.find((r) => r.tutor_id === row.tutor_id)?.rating || null;
+    res.json(rows);
   });
   const tutorialSchema = z.object({
     title: text.max(255),
@@ -872,26 +920,15 @@ export function createApp(
       return;
     }
     if (req.query.format === "xlsx") {
-      const w = new ExcelJS.Workbook(),
-        s = w.addWorksheet("Sessions");
-      s.columns = [
-        "id",
-        "student_id",
-        "tutor_id",
-        "starts_at",
-        "ends_at",
-        "status",
-      ].map((key) => ({ header: key, key, width: 25 }));
-      s.addRows(rows);
       res
         .type(
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        .attachment("sessions.xlsx");
-      await w.xlsx.write(res);
-      res.end();
+        .attachment("sessions.xlsx")
+        .send(spreadsheet(rows));
       return;
     }
+
     res
       .type("csv")
       .attachment("sessions.csv")

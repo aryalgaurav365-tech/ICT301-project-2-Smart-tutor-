@@ -2,7 +2,10 @@ import "./config.js";
 import bcrypt from "bcryptjs";
 import { database, migrate, now } from "./db.js";
 export async function seed(db) {
-  if (process.env.NODE_ENV === "production")
+  if (
+    process.env.NODE_ENV === "production" ||
+    (process.env.DATABASE_URL && !process.env.ALLOW_DEMO_SEED)
+  )
     throw new Error("Demo seed disabled in production");
   for (const [name, color] of [
     ["Mathematics", "peach"],

@@ -44,10 +44,14 @@ The app runs on any suitable Node host with `npm ci && npm run build` followed b
 
 For Vercel frontend + Render API, see [deployment instructions](docs/DEPLOYMENT.md). Relative `/api` requests go through a same-origin reverse proxy. There is no Vercel SDK dependency in application logic.
 
-## First development release
+## Application capabilities and release status
 
-Implemented: responsive public pages, tutor search/profiles, filtered resource catalogue, verification/OTP login and reset, role-based portals, tutor approval/suspension, availability, student requests and admin assignment, booking conflict checks, persisted private messaging/read status, notifications, announcements, PDF/link uploads, eligible reviews, summary analytics, CSV/PDF/XLSX session reports, and contact enquiries.
+Implemented: responsive public pages, role-based portals, tutor discovery/profiles/photos, resource filters, verification/welcome emails, OTP authentication/reset, one-time admin invitations and re-authentication, tutor approval, availability, conflict-checked assignment, cancellation/rescheduling requests, private messaging, notifications, draft/content management, reviews, date-filtered analytics, three report formats, admin enrollment, audit/delivery views and contact enquiries.
 
-This is not a completed production release. Live MySQL/SMTP/CAPTCHA still require account-level verification. Cloud file storage is pending: production PDF upload fails clearly unless a proven persistent disk is configured. Messaging refreshes every five seconds. Analytics currently shows summary counts rather than the full planned trends. Profile/photo editing, tutor draft editing, cancellation/rescheduling requests, one-time admin invitations, sensitive-action re-authentication, fuller audit/retention controls, security/accessibility review and UAT remain release work. The current admin invitation is a shared provisioning secret: rotate it immediately after onboarding. Reminder timing depends on an awake server and configured SMTP.
+Local email capture, storage and SQLite make the app usable without service accounts. Production also supports MySQL with verified TLS and private S3-compatible object storage. These provider paths need live account verification. Messaging refreshes every five seconds. Email workers use bounded retries and leases; reminders still depend on an awake worker or scheduled workflow and cannot promise exact timing on free hosts.
 
-The implementation uses JavaScript modules; TypeScript conversion from the original proposed architecture is deferred. See [the implementation plan](IMPLEMENTATION_PLAN.md) for target scope and [current status](docs/STATUS.md) for delivery limits. Demo content does not claim real endorsements, qualifications or accreditation.
+Start deployment with [the Vercel account/setup guide](docs/VERCEL_SETUP.md), then follow [hosting details](docs/DEPLOYMENT.md). The app has not been deployed to a public URL. The complete local test/build evidence and remaining live prerequisites are separated in [STATUS.md](docs/STATUS.md).
+
+To provision the first production admin, securely configure the production database connection on a trusted machine and run `npm run admin:invite -- your-email@example.com`. The invitation is delivered by the configured email worker. Existing administrators invite others from Admin tools. Never seed demo credentials in production.
+
+The app uses JavaScript modules; the original proposed TypeScript conversion is deferred. Human acceptance, real branding/contact content, privacy/age policy and tutor qualification checks remain with the project owner. No accreditation or legal-compliance certification is claimed.
