@@ -1777,3 +1777,53 @@ td small {
     animation: none !important;
   }
 }
+.avatar-photo {
+  object-fit: cover;
+  border-radius: 50%;
+}
+select[multiple] {
+  min-height: 130px;
+}
+.chart {
+  padding: 20px 0;
+}
+.chart-bars {
+  height: 170px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  border-bottom: 1px solid var(--line);
+}
+.chart-column {
+  flex: 1;
+  min-width: 1px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+.chart-column span {
+  display: block;
+  width: 100%;
+  max-width: 30px;
+  background: #3e8170;
+  border-radius: 3px 3px 0 0;
+}
+.chart-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.modal {
+  max-height: 90vh;
+  overflow: auto;
+}
+.modal-close {
+  z-index: 1;
+}
+.panel details summary {
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--green);
+  margin-top: 15px;
+}

@@ -33,121 +33,27 @@ import {
   Clock,
 } from "lucide-react";
 import "./style.css";
-const Context = createContext(null),
-  useApp = () => useContext(Context);
-async function api(url, options = {}) {
-  const r = await fetch("/api" + url, {
-    credentials: "include",
-    ...options,
-    headers:
-      options.body instanceof FormData
-        ? {}
-        : { "Content-Type": "application/json" },
-    body:
-      options.body instanceof FormData
-        ? options.body
-        : options.body
-          ? JSON.stringify(options.body)
-          : undefined,
-  });
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.error || "Request failed");
-  return data;
-}
-function useData(url) {
-  const [data, setData] = useState(null),
-    [error, setError] = useState("");
-  const load = () =>
-    api(url)
-      .then(setData)
-      .catch((e) => setError(e.message));
-  useEffect(() => {
-    setData(null);
-    load();
-  }, [url]);
-  return [data, error, load];
-}
-const fmt = (d) =>
-    new Date(d).toLocaleString(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }),
-  initials = (n) =>
-    n
-      ?.split(" ")
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join("");
-function Avatar({ name, large = false }) {
-  return (
-    <span className={"avatar " + (large ? "large" : "")}>{initials(name)}</span>
-  );
-}
-function ErrorBox({ children }) {
-  return (
-    children && (
-      <div className="alert" role="alert">
-        {children}
-      </div>
-    )
-  );
-}
-function Empty({ children }) {
-  return (
-    <div className="empty">
-      <BookOpen size={27} />
-      <p>{children}</p>
-    </div>
-  );
-}
-function Field({ label, ...props }) {
-  return (
-    <label>
-      {label}
-      <input {...props} />
-    </label>
-  );
-}
-function Form({
-  endpoint,
-  method = "POST",
-  children,
-  submit = "Save",
-  onDone,
-  transform,
-}) {
-  const [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
-  const { toast } = useApp();
-  return (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const form = e.currentTarget;
-        setBusy(true);
-        setError("");
-        try {
-          const f = new FormData(form);
-          const body = transform ? transform(f) : Object.fromEntries(f);
-          const r = await api(endpoint, { method, body });
-          toast(r.message || "Saved successfully");
-          onDone?.(r, form);
-        } catch (e) {
-          setError(e.message);
-        } finally {
-          setBusy(false);
-        }
-      }}
-    >
-      <ErrorBox>{error}</ErrorBox>
-      {children}
-      <button className="btn" disabled={busy}>
-        {busy ? "Just a moment…" : submit}
-        <ArrowRight size={17} />
-      </button>
-    </form>
-  );
-}
+import {
+  Context,
+  useApp,
+  api,
+  useData,
+  fmt,
+  Avatar,
+  ErrorBox,
+  Empty,
+  Field,
+  Form,
+} from "./shared";
+import {
+  Profile,
+  MyDrafts,
+  Analytics,
+  Changes,
+  ChangeButton,
+  AdminTools,
+  Reauthenticate,
+} from "./WorkspaceFeatures";
 function App() {
   const [user, setUser] = useState(null),
     [ready, setReady] = useState(false),
@@ -167,6 +73,7 @@ function App() {
     <Context.Provider value={{ user, setUser, ready, toast: setToast }}>
       <BrowserRouter>
         <Scroll />
+        <Reauthenticate />
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -211,7 +118,9 @@ function App() {
 }
 function Scroll() {
   const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
   return null;
 }
 function Header() {
@@ -540,7 +449,15 @@ function TutorCard({ tutor: t, index: i }) {
         <span className="approved">
           <ShieldCheck size={13} /> Approved tutor
         </span>
-        <Avatar name={t.name} large />
+        {t.photo ? (
+          <img
+            className="avatar large avatar-photo"
+            alt={t.name}
+            src={"/api/users/" + t.id + "/photo"}
+          />
+        ) : (
+          <Avatar name={t.name} large />
+        )}
         <span className="portrait-deco">{["✳", "↗", "✦"][i % 3]}</span>
       </div>
       <div className="tutor-content">
@@ -577,7 +494,15 @@ function Tutors() {
         {t ? (
           <div className="profile-grid">
             <div className="panel">
-              <Avatar name={t.name} large />
+              {t.photo ? (
+                <img
+                  className="avatar large avatar-photo"
+                  alt={t.name}
+                  src={"/api/users/" + t.id + "/photo"}
+                />
+              ) : (
+                <Avatar name={t.name} large />
+              )}
               <h1 className="spaced">{t.name}</h1>
               <p>{t.subjects.map((s) => s.name).join(" · ")}</p>
               <p>{t.bio}</p>
@@ -1223,6 +1148,12 @@ function Portal() {
         ]
       : [["messages", "Messages", MessageCircle]]),
     ["notifications", "Notifications", Bell],
+    ["profile", "My profile", Users],
+    ["analytics", "Insights", LayoutDashboard],
+    ["changes", "Session changes", CalendarDays],
+    ...(user.role === "admin"
+      ? [["operations", "Admin tools", ShieldCheck]]
+      : []),
   ];
   return (
     <div className="container portal">
@@ -1268,6 +1199,10 @@ function Portal() {
           <Route path="notifications" element={<Notifications />} />
           <Route path="announcements" element={<Announcements />} />
           <Route path="contacts" element={<Contacts />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="changes" element={<Changes />} />
+          <Route path="operations" element={<AdminTools />} />
         </Routes>
       </div>
     </div>
@@ -1437,6 +1372,11 @@ function Sessions() {
               </p>
               <small>{r.notes}</small>
             </div>
+            {user.role === "student" && (
+              <Action url={"/requests/" + r.id + "/withdraw"} onDone={refresh}>
+                Withdraw request
+              </Action>
+            )}
             {user.role === "admin" && (
               <Action url={"/requests/" + r.id + "/assign"} onDone={refresh}>
                 Assign session
@@ -1462,6 +1402,9 @@ function Sessions() {
             {s.reason && <p>{s.reason}</p>}
           </div>
           <div className="row-actions">
+            {user.role !== "admin" && s.status === "scheduled" && (
+              <ChangeButton session={s} />
+            )}
             {user.role === "admin" && s.status === "scheduled" && (
               <>
                 <Action
@@ -1707,6 +1650,7 @@ function UploadResource() {
           </p>
         </Form>
       </div>
+      <MyDrafts />
     </>
   );
 }

@@ -204,7 +204,10 @@ test("admin assignment checks availability and conflicts; messages and reviews e
 test("reminders are persisted only once per participant", async () => {
   await db("sessions")
     .where({ id: 1 })
-    .update({ starts_at: new Date(Date.now() + 3600000).toISOString() });
+    .update({
+      starts_at: new Date(Date.now() + 3600000).toISOString(),
+      created_at: new Date(Date.now() - 48 * 3600000).toISOString(),
+    });
   await jobs(db);
   await jobs(db);
   assert.equal(

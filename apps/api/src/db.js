@@ -1,4 +1,5 @@
 import knex from "knex";
+import { upgrades } from "./upgrades.js";
 import fs from "node:fs";
 import path from "node:path";
 export const now = () => new Date().toISOString();
@@ -174,4 +175,5 @@ export async function migrate(db) {
   for (const [name, columns] of Object.entries(tables))
     if (!(await db.schema.hasTable(name)))
       await db.schema.createTable(name, columns);
+  await upgrades(db);
 }

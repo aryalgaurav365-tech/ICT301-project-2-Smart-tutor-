@@ -12,6 +12,8 @@ import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
 import { now } from "./db.js";
+import { features } from "./features.js";
+import { storage } from "./storage.js";
 const hash = (s) => createHash("sha256").update(s).digest("hex"),
   token = () => randomBytes(32).toString("hex");
 const fail = (status, message) => {
@@ -43,6 +45,7 @@ export function createApp(
   } = {},
 ) {
   const app = express();
+  const store = storage({ dataDir, production });
   app.disable("x-powered-by");
   if (process.env.TRUST_PROXY)
     app.set("trust proxy", Number(process.env.TRUST_PROXY));
@@ -87,6 +90,7 @@ export function createApp(
           .where({ digest: hash(req.cookies.st_session) })
           .where("expires_at", ">", now())
           .first());
+      req.session = s;
       req.user = s
         ? await db("users")
             .where({ id: s.user_id, status: "active", verified: true })
@@ -179,9 +183,20 @@ export function createApp(
       .parse(req.body);
     if (
       s.role === "admin" &&
-      (!process.env.ADMIN_INVITE || s.invite !== process.env.ADMIN_INVITE)
+      (!s.invite ||
+        !(await db("admin_invites")
+          .where({
+            digest: hash(s.invite),
+            email: s.email.toLowerCase(),
+            used_at: null,
+          })
+          .where("expires_at", ">", now())
+          .first()))
     )
-      fail(403, "Administrator registration requires an invitation");
+      fail(
+        403,
+        "Administrator registration requires a valid email-bound invitation",
+      );
     if (s.role === "student" && (!s.dob || !s.address))
       fail(400, "Date of birth and home address are required");
     if (s.role === "tutor" && !s.qualifications)
@@ -211,6 +226,17 @@ export function createApp(
       fail(409, "Email or username already registered");
     const pw = await bcrypt.hash(s.password, 12);
     const uid = await db.transaction(async (trx) => {
+      if (s.role === "admin") {
+        const n = await trx("admin_invites")
+          .where({
+            digest: hash(s.invite),
+            email: s.email.toLowerCase(),
+            used_at: null,
+          })
+          .where("expires_at", ">", now())
+          .update({ used_at: now() });
+        if (!n) fail(403, "Invitation expired or already used");
+      }
       const [uid] = await trx("users").insert({
         name: s.name,
         username: s.username,
@@ -283,6 +309,7 @@ export function createApp(
       digest: hash(t),
       user_id: u.id,
       expires_at: new Date(Date.now() + 8 * 3600000).toISOString(),
+      recent_until: new Date(Date.now() + 15 * 60000).toISOString(),
     });
     res.cookie("st_session", t, {
       httpOnly: true,
@@ -329,7 +356,7 @@ export function createApp(
   app.get("/api/tutors", async (req, res) => {
     const tutors = await db("users")
       .where({ role: "tutor", status: "active", verified: true })
-      .select("id", "name", "bio", "qualifications");
+      .select("id", "name", "bio", "qualifications", "photo");
     for (const t of tutors) {
       t.subjects = await db("user_subjects")
         .join("subjects", "subjects.id", "user_subjects.subject_id")
@@ -395,7 +422,7 @@ export function createApp(
     auth("tutor", "admin"),
     upload.single("file"),
     async (req, res) => {
-      if (production && !process.env.PERSISTENT_DISK)
+      if (!store.available)
         fail(503, "PDF uploads require persistent storage configuration");
       if (
         !req.file ||
@@ -404,9 +431,7 @@ export function createApp(
       )
         fail(400, "Choose a valid PDF (maximum 20 MB)");
       const s = tutorialSchema.parse(req.body),
-        file = token() + ".pdf";
-      await fs.mkdir(path.join(dataDir, "uploads"), { recursive: true });
-      await fs.writeFile(path.join(dataDir, "uploads", file), req.file.buffer);
+        file = await store.put(req.file.buffer, "pdf", "application/pdf");
       const [tid] = await db("tutorials").insert({
         ...s,
         file,
@@ -434,10 +459,7 @@ export function createApp(
       created_at: now(),
     });
     if (t.type === "link") return res.redirect(t.url);
-    res
-      .type("pdf")
-      .attachment("learning-resource.pdf")
-      .sendFile(path.join(dataDir, "uploads", t.file));
+    await store.send(res, t.file, { attachment: true });
   });
   app.patch("/api/tutorials/:id", auth("admin"), async (req, res) => {
     const s = z
@@ -504,6 +526,12 @@ export function createApp(
         .first())
     )
       fail(400, "Tutor unavailable");
+    if (
+      !(await db("user_subjects")
+        .where({ user_id: s.tutor_id, subject_id: s.subject_id })
+        .first())
+    )
+      fail(400, "Choose a subject taught by this tutor");
     const [rid] = await db("requests").insert({
       ...s,
       student_id: req.user.id,
@@ -629,8 +657,14 @@ export function createApp(
     if (s.status === "completed" && session.ends_at > now())
       fail(400, "Future sessions cannot be completed");
     await db("sessions").where({ id: session.id }).update(s);
-    for (const uid of [session.student_id, session.tutor_id])
+    await db("mail")
+      .where({ session_id: session.id, status: "pending" })
+      .update({ status: "cancelled" });
+    for (const uid of [session.student_id, session.tutor_id]) {
       await notify(uid, "Session " + s.status, s.reason);
+      const u = await db("users").where({ id: uid }).first();
+      await mail(u.email, "Session " + s.status, s.reason);
+    }
     await audit(req.user.id, "session." + s.status);
     res.json({ message: "Session updated" });
   });
@@ -759,6 +793,13 @@ export function createApp(
     }
     res.status(201).json({ message: "Announcement published" });
   });
+  app.use("/api/admin", auth("admin"), (req, res, next) => {
+    if (!req.session?.recent_until || req.session.recent_until < now())
+      return res
+        .status(428)
+        .json({ error: "Confirm your password to continue", reauth: true });
+    next();
+  });
   app.get("/api/admin/users", auth("admin"), async (req, res) =>
     res.json((await db("users").orderBy("id", "desc")).map(safe)),
   );
@@ -886,6 +927,7 @@ export function createApp(
   app.get("/api/admin/contacts", auth("admin"), async (req, res) =>
     res.json(await db("contacts").orderBy("id", "desc")),
   );
+  features(app, db, { auth, notify, mail, audit, store });
   if (!production)
     app.get("/api/dev/mail", async (req, res) =>
       res.json(await db("mail").orderBy("id", "desc").limit(100)),
@@ -915,50 +957,4 @@ export function createApp(
   });
   return app;
 }
-export async function jobs(db) {
-  for (const s of await db("sessions")
-    .where({ status: "scheduled" })
-    .where("starts_at", ">", now())
-    .where(
-      "starts_at",
-      "<=",
-      new Date(Date.now() + 24 * 3600000).toISOString(),
-    ))
-    for (const uid of [s.student_id, s.tutor_id]) {
-      const key = `reminder:${s.id}:${uid}`;
-      if (await db("mail").where({ job_key: key }).first()) continue;
-      const u = await db("users").where({ id: uid }).first();
-      await db("mail").insert({
-        recipient: u.email,
-        subject: "Your tutoring session is coming up",
-        body: `Your session starts ${s.starts_at}`,
-        job_key: key,
-        created_at: now(),
-      });
-    }
-  if (!process.env.SMTP_HOST) return;
-  const t = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_PORT === "465",
-    auth: process.env.SMTP_USER
-      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }
-      : undefined,
-  });
-  for (const m of await db("mail")
-    .where({ status: "pending" })
-    .where("attempts", "<", 5)
-    .limit(20)) {
-    try {
-      await t.sendMail({
-        from: process.env.MAIL_FROM,
-        to: m.recipient,
-        subject: m.subject,
-        text: m.body,
-      });
-      await db("mail").where({ id: m.id }).update({ status: "sent" });
-    } catch {
-      await db("mail").where({ id: m.id }).increment("attempts", 1);
-    }
-  }
-}
+export { jobs } from "./jobs.js";
