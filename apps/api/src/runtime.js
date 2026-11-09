@@ -2,12 +2,15 @@ import { database, migrate } from "./db.js";
 import { createApp } from "./app.js";
 import { bootstrapAdmin } from "./bootstrap.js";
 import { hasDatabaseConfig } from "./database-config.js";
+import { logDeploymentConfig } from "./config-diagnostics.js";
 // The same app runs behind a Node listener or a Vercel function.
 export async function initialize({
   env = process.env,
   makeDatabase = database,
   makeApp = createApp,
 } = {}) {
+  if (env.NODE_ENV === "production" || env.VERCEL)
+    logDeploymentConfig("runtime", env);
   if ((env.NODE_ENV === "production" || env.VERCEL) && !hasDatabaseConfig(env))
     throw Object.assign(
       new Error(
