@@ -30,6 +30,8 @@ On Vercel the API defaults to trusting one upstream proxy hop so Express identif
 
 ## 3. Configure email and first administrator
 
+For Brevo's HTTPS API, create an **API key** in Brevo's SMTP & API settings and save it in Vercel as the Production **Secret** `BREVO_API_KEY`. This is different from an SMTP key. Set `MAIL_FROM` to your verified sender, for example `SmartTutor <sender@example.com>`. Redeploy after saving. When `BREVO_API_KEY` is present, the server uses Brevo's transactional email API; otherwise it uses the SMTP settings below. The key stays on the server and must never use a `VITE_` prefix or be committed to Git. API errors are logged as safe codes and HTTP statuses; queue retries honor the provider's retry delay, bounded to one day. Provider acceptance must still be checked against delivery logs and the inbox.
+
 Choose a provider whose current free transactional-email allowance and sender-verification requirements suit the project. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `MAIL_FROM` securely in Vercel. Verify the sender through that provider.
 
 Set `INITIAL_ADMIN_EMAIL` to the intended administrator's email. Before an admin exists, initialization queues an email-bound, single-use invitation expiring in 48 hours. Opening the site triggers a bounded post-response delivery batch. Register using the invitation, verify the email, and sign in with the emailed OTP. Later administrators are invited from **Admin tools**. A trusted operator can alternatively use `npm run admin:invite -- email` with securely configured database access.

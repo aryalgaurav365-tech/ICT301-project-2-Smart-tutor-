@@ -1,5 +1,6 @@
 const settings = [
   "INITIAL_ADMIN_EMAIL",
+  "BREVO_API_KEY",
   "SMTP_HOST",
   "SMTP_PORT",
   "SMTP_USER",

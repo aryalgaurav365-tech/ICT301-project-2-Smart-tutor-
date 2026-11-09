@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { mailTransport } from "./mail-transport.js";
 import { randomBytes } from "node:crypto";
 import { now } from "./db.js";
 export async function jobs(
@@ -9,6 +9,7 @@ export async function jobs(
     batchSize = 20,
     deadlineMs = Infinity,
     logger = console,
+    env = process.env,
   } = {},
 ) {
   const deadline = Date.now() + deadlineMs;
@@ -43,22 +44,12 @@ export async function jobs(
         .ignore();
     }
   }
-  if (!transport && !process.env.SMTP_HOST) {
-    logger.warn("Mail delivery skipped: SMTP_HOST is not configured");
+  transport ??= mailTransport(env);
+  if (!transport) {
+    logger.warn("Mail delivery skipped: configure BREVO_API_KEY or SMTP_HOST");
     return;
   }
-  transport ??= nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_PORT === "465",
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
-    auth: process.env.SMTP_USER
-      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }
-      : undefined,
-  });
-  // A crashed worker's lease expires. External SMTP still cannot guarantee exactly-once delivery.
+  // A crashed worker's lease expires. External email delivery cannot guarantee exactly-once delivery.
   await db("mail")
     .where({ status: "sending" })
     .where("lease_until", "<", at)
@@ -100,7 +91,7 @@ export async function jobs(
     }
     try {
       await transport.sendMail({
-        from: process.env.MAIL_FROM,
+        from: env.MAIL_FROM,
         to: m.recipient,
         subject: m.subject,
         text: m.body,
@@ -111,9 +102,9 @@ export async function jobs(
         lease_token: null,
         lease_until: null,
       });
-      logger.info("Mail accepted by SMTP provider", { mailId: m.id });
+      logger.info("Mail accepted by email provider", { mailId: m.id });
     } catch (error) {
-      // SMTP errors can contain credentials, recipient addresses and message
+      // Provider errors can contain credentials, recipient addresses and message
       // contents. Log only recognized diagnostic codes, never the raw error.
       const codes = new Set([
         "EAUTH",
@@ -128,6 +119,10 @@ export async function jobs(
         "ESOCKET",
         "ETIMEDOUT",
         "ETLS",
+        "BREVO_HTTP",
+        "BREVO_NETWORK",
+        "BREVO_RESPONSE",
+        "EMAIL_ADDRESS_CONFIG",
       ]);
       logger.error("Mail delivery failed", {
         mailId: m.id,
@@ -139,11 +134,22 @@ export async function jobs(
           error.responseCode <= 599
             ? error.responseCode
             : null,
+        ...(Number.isInteger(error?.httpStatus) &&
+        error.httpStatus >= 100 &&
+        error.httpStatus <= 599
+          ? { httpStatus: error.httpStatus }
+          : {}),
       });
       await owned().update({
         status: m.attempts + 1 >= 5 ? "failed" : "pending",
         next_attempt_at: new Date(
-          +clock() + Math.min(60, 2 ** m.attempts) * 60000,
+          +clock() +
+            Math.max(
+              Math.min(60, 2 ** m.attempts) * 60000,
+              Number.isFinite(error?.retryAfterMs)
+                ? Math.min(86400000, Math.max(0, error.retryAfterMs))
+                : 0,
+            ),
         ).toISOString(),
         lease_token: null,
         lease_until: null,
