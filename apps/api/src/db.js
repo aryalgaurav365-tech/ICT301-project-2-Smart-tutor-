@@ -1,38 +1,22 @@
 import knex from "knex";
 import { upgrades } from "./upgrades.js";
+import { mysqlConnection } from "./database-config.js";
 import fs from "node:fs";
 import path from "node:path";
 export const now = () => new Date().toISOString();
-export function database(filename) {
-  const mysql = !filename && process.env.DATABASE_URL;
+export function database(filename, env = process.env) {
+  const connection = !filename ? mysqlConnection(env) : null;
+  const mysql = !!connection;
   const file =
-    filename ||
-    path.resolve(process.env.DATA_DIR || "data", "smarttutor.sqlite");
+    filename || path.resolve(env.DATA_DIR || "data", "smarttutor.sqlite");
   if (!mysql && file !== ":memory:")
     fs.mkdirSync(path.dirname(file), { recursive: true });
-  let connection = mysql;
-  if (mysql && (process.env.DB_SSL === "true" || process.env.DB_SSL_CA_FILE)) {
-    const url = new URL(mysql);
-    connection = {
-      host: url.hostname,
-      port: Number(url.port || 3306),
-      user: decodeURIComponent(url.username),
-      password: decodeURIComponent(url.password),
-      database: decodeURIComponent(url.pathname.slice(1)),
-      ssl: {
-        rejectUnauthorized: true,
-        ...(process.env.DB_SSL_CA_FILE
-          ? { ca: fs.readFileSync(process.env.DB_SSL_CA_FILE, "utf8") }
-          : {}),
-      },
-    };
-  }
   return knex(
     mysql
       ? {
           client: "mysql2",
           connection,
-          pool: { min: 0, max: process.env.VERCEL ? 2 : 5 },
+          pool: { min: 0, max: env.VERCEL ? 2 : 5 },
         }
       : {
           client: "better-sqlite3",

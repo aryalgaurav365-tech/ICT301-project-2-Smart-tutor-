@@ -40,7 +40,7 @@ Browser tests use `/usr/bin/chromium`; set `CHROMIUM_PATH` for another location.
 
 ## Hosting
 
-The app runs on Vercel or any suitable Node host with `npm ci && npm run build` followed by `npm start`. The API serves both its routes and the React build, so a single-host deployment needs no frontend changes. Production requires `DATABASE_URL` for persistent MySQL and `APP_URL` for the public HTTPS origin. Configuration is loaded from repository-root `.env` locally; use provider secret settings in production.
+The app runs on Vercel or any suitable Node host with `npm ci && npm run build` followed by `npm start`. The API serves both its routes and the React build, so a single-host deployment needs no frontend changes. Production requires either `DATABASE_URL` or the separate `DB_HOST`/`DB_PORT`/`DB_USER`/`DB_PASSWORD`/`DB_NAME` fields for persistent MySQL and `APP_URL` for the public HTTPS origin. Configuration is loaded from repository-root `.env` locally; use provider secret settings in production.
 
 For Vercel frontend + Render API, see [deployment instructions](docs/DEPLOYMENT.md). Relative `/api` requests go through a same-origin reverse proxy. There is no Vercel SDK dependency in application logic.
 

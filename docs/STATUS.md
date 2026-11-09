@@ -28,3 +28,7 @@ Real-user content, actual tutor credential verification, operator contact detail
 The application now includes a tested Vercel Node function adapter, cached cold-start initialization, fresh-production subject categories, optional first-admin email bootstrap, bounded post-response email jobs and direct signed PDF uploads. API bodies stay small while the browser uploads PDFs up to 20 MB to private storage. Vercel’s official Node builder produced a nodejs24.x Lambda with handler api/index.js; this was an offline bundle verification, not a published deployment. The standalone Node/Render path remains available.
 
 The Vercel adapter and large-file flow are tested locally. A real Vercel deployment and provider-backed smoke checks are still pending. Consult VERCEL_SETUP.md for the single-project configuration; do not select the multi-service import automatically inferred from render.yaml.
+
+## TiDB connection-field setup
+
+The app accepts separate DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME settings, so passwords do not need URI encoding. DATABASE_URL remains supported. The current Vercel function region is aligned to the selected Tokyo TiDB endpoint. Real TiDB connection verification remains pending; these changes do not configure the account's password, IP allowlist or Vercel environment variables on the user's behalf.

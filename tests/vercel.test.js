@@ -201,3 +201,30 @@ test("failed initialization exposes no configuration details and can recover on 
     await close(server);
   }
 });
+
+test("production initialization accepts complete separate database fields", async () => {
+  const db = database(":memory:");
+  const env = {
+    NODE_ENV: "production",
+    APP_URL: "https://smarttutor.test",
+    DB_HOST: "database.example.test",
+    DB_PORT: "4000",
+    DB_USER: "prefix.root",
+    DB_PASSWORD: "synthetic-private-value",
+    DB_NAME: "test",
+    DB_SSL: "true",
+  };
+  try {
+    await initialize({
+      env,
+      makeDatabase: (_file, configuration) => {
+        assert.equal(configuration, env);
+        return db;
+      },
+    });
+    assert.equal((await db("subjects")).length, 6);
+    assert.equal((await db("users")).length, 0);
+  } finally {
+    await db.destroy();
+  }
+});

@@ -1,15 +1,18 @@
 import { database, migrate } from "./db.js";
 import { createApp } from "./app.js";
 import { bootstrapAdmin } from "./bootstrap.js";
+import { hasDatabaseConfig } from "./database-config.js";
 // The same app runs behind a Node listener or a Vercel function.
 export async function initialize({
   env = process.env,
   makeDatabase = database,
   makeApp = createApp,
 } = {}) {
-  if ((env.NODE_ENV === "production" || env.VERCEL) && !env.DATABASE_URL)
+  if ((env.NODE_ENV === "production" || env.VERCEL) && !hasDatabaseConfig(env))
     throw Object.assign(
-      new Error("DATABASE_URL must be configured for deployment"),
+      new Error(
+        "Configure DATABASE_URL or all individual DB connection fields for deployment",
+      ),
       { code: "CONFIG_DATABASE" },
     );
   if (env.NODE_ENV === "production" || env.VERCEL) {
@@ -21,7 +24,7 @@ export async function initialize({
         { code: "CONFIG_APP_URL" },
       );
   }
-  const db = makeDatabase();
+  const db = makeDatabase(undefined, env);
   try {
     await migrate(db);
     const pendingBootstrap = await bootstrapAdmin(db, env);

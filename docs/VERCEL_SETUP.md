@@ -18,7 +18,9 @@ Vercel UI labels may change. Never accept a paid upgrade or trial that charges l
 
 Use **TiDB Cloud Starter with a $0 monthly spending limit** as the recommended MySQL-compatible free candidate. Aiven stopped accepting new free MySQL services on 6 November 2026. See [verified provider evidence and setup](DATABASE_OPTIONS.md). TiDB compatibility must still be validated on the actual instance. Vercel does not create the database automatically.
 
-In Vercel **Project → Settings → Environment Variables**, add the connection as `DATABASE_URL` and enable `DB_SSL=true`. Credentials belong in the provider's secure settings, not chat or GitHub. Set `DB_SSL_CA_FILE` only if you have deployed a required provider CA file securely; keep certificate verification enabled.
+In Vercel **Project → Settings → Environment Variables**, enter separate connection fields: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, and `DB_SSL=true`. Copy the host/port/username from TiDB; paste the password literally, without URL encoding or surrounding quotes. For a fresh TiDB instance, `test` is an acceptable application database; do not use `sys`. Alternatively, existing `DATABASE_URL` configurations remain supported and take precedence. Do not set both methods with conflicting values.
+
+Credentials belong in Vercel's secure settings, not chat or GitHub. The app uses Node's trusted CA roots and keeps certificate verification enabled. The CA-path instructions in TiDB's MySQL CLI example refer to a local CLI, not Vercel. If your provider needs an additional CA, supply the PEM as `DB_SSL_CA` or use `DB_SSL_CA_FILE` when a securely deployed CA file is available. Production connections always require verified TLS.
 
 Also set `APP_URL` to your public HTTPS production origin, for example `https://your-project.vercel.app`. The function can use Vercel's `VERCEL_PROJECT_PRODUCTION_URL` when available, but explicitly setting `APP_URL` removes ambiguity for email links and origin checks. Redeploy after changing environment settings.
 
@@ -61,3 +63,5 @@ Only share public project/deployment URLs with this chat. Do not send passwords,
 ## Alternative: Vercel frontend and a separate Node API
 
 The app still runs on any compatible Node host with `npm run build` then `npm start`. `render.yaml` remains available for that alternative. If choosing it, `DEPLOY_API_ORIGIN=https://your-api.example node scripts/configure-vercel.mjs` replaces the Vercel configuration with an external API proxy. Do not run that generator for the all-on-Vercel setup.
+
+The current Vercel function region is `hnd1` (Tokyo), matching the TiDB endpoint selected for this project (`ap-northeast-1`). Change the function region if the database moves. TiDB's public-endpoint allowlist must permit the Vercel function's outgoing connection; allowing only your laptop IP does not permit Vercel. Configure network access through the provider's supported controls while retaining TLS and a strong application credential.
