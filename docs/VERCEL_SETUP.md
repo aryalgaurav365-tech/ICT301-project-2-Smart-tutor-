@@ -16,7 +16,7 @@ Vercel UI labels may change. Never accept a paid upgrade or trial that charges l
 
 ## 2. Add persistent MySQL
 
-Create a database with a provider whose currently available free plan you have checked. Aiven free MySQL is a candidate, not a pricing guarantee. Vercel does not create MySQL automatically.
+Use **TiDB Cloud Starter with a $0 monthly spending limit** as the recommended MySQL-compatible free candidate. Aiven stopped accepting new free MySQL services on 6 November 2026. See [verified provider evidence and setup](DATABASE_OPTIONS.md). TiDB compatibility must still be validated on the actual instance. Vercel does not create the database automatically.
 
 In Vercel **Project → Settings → Environment Variables**, add the connection as `DATABASE_URL` and enable `DB_SSL=true`. Credentials belong in the provider's secure settings, not chat or GitHub. Set `DB_SSL_CA_FILE` only if you have deployed a required provider CA file securely; keep certificate verification enabled.
 

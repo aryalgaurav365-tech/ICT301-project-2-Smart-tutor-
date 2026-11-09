@@ -19,7 +19,7 @@ The latest local release checks passed: 27 backend tests, 10 browser tests and t
 
 ## What prevents a live release
 
-The user has no service accounts configured yet. A public release requires Vercel, an API host, persistent MySQL, verified email sender, CAPTCHA keys, and private file-storage settings. No public application URL is deployed or verified. Follow [Vercel setup](VERCEL_SETUP.md).
+The user has created a Vercel account and reported a deployment at https://ict-301-project-2-smart-tutor.vercel.app/. This workspace has not verified the live endpoint because its network access is blocked. A complete live release still requires a connected persistent database, verified email sender, CAPTCHA keys, and private file-storage settings. TiDB Cloud Starter is now the recommended free database candidate; see DATABASE_OPTIONS.md. Follow [Vercel setup](VERCEL_SETUP.md).
 
 Real-user content, actual tutor credential verification, operator contact details/privacy/age policies, human acceptance testing, provider backup/restore rehearsal, and production workload measurements require owner participation. No legal/privacy certification, guaranteed free-tier availability, 500-user capacity or uptime SLA is claimed. Free-host sleeping and scheduled-run delays can affect reminders. Messaging uses polling rather than a streaming connection.
 
