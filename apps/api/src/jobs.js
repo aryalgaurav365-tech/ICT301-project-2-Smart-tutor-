@@ -8,6 +8,7 @@ export async function jobs(
     clock = () => new Date(),
     batchSize = 20,
     deadlineMs = Infinity,
+    logger = console,
   } = {},
 ) {
   const deadline = Date.now() + deadlineMs;
@@ -42,7 +43,10 @@ export async function jobs(
         .ignore();
     }
   }
-  if (!transport && !process.env.SMTP_HOST) return;
+  if (!transport && !process.env.SMTP_HOST) {
+    logger.warn("Mail delivery skipped: SMTP_HOST is not configured");
+    return;
+  }
   transport ??= nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
@@ -107,7 +111,35 @@ export async function jobs(
         lease_token: null,
         lease_until: null,
       });
-    } catch {
+      logger.info("Mail accepted by SMTP provider", { mailId: m.id });
+    } catch (error) {
+      // SMTP errors can contain credentials, recipient addresses and message
+      // contents. Log only recognized diagnostic codes, never the raw error.
+      const codes = new Set([
+        "EAUTH",
+        "ECONNECTION",
+        "ECONNREFUSED",
+        "ECONNRESET",
+        "EDNS",
+        "EENVELOPE",
+        "EMESSAGE",
+        "ENOTFOUND",
+        "EPROTOCOL",
+        "ESOCKET",
+        "ETIMEDOUT",
+        "ETLS",
+      ]);
+      logger.error("Mail delivery failed", {
+        mailId: m.id,
+        attempt: m.attempts + 1,
+        code: codes.has(error?.code) ? error.code : "SMTP_ERROR",
+        smtpStatus:
+          Number.isInteger(error?.responseCode) &&
+          error.responseCode >= 400 &&
+          error.responseCode <= 599
+            ? error.responseCode
+            : null,
+      });
       await owned().update({
         status: m.attempts + 1 >= 5 ? "failed" : "pending",
         next_attempt_at: new Date(

@@ -34,6 +34,8 @@ Set `INITIAL_ADMIN_EMAIL` to the intended administrator's email. Before an admin
 
 Vercel functions do not run a persistent timer. The API schedules bounded mail batches using Vercel's supported `waitUntil` lifecycle helper after successful mutations; login/verification mail is prioritized. The optional scheduled worker below drains outstanding queues and processes reminders while nobody is using the site. Real SMTP delivery must be verified before calling authentication ready.
 
+If the initial invitation is missing, first confirm `/api/health` reports a connected database. Redeploy with the Production email settings, open that endpoint, and inspect **Vercel → Logs** for administrator bootstrap and mail-delivery messages. Logs identify missing bootstrap/SMTP configuration, existing invitations, successful SMTP acceptance, or a sanitized failure code/status (for example `EAUTH`/535). They never include raw SMTP errors, credentials, invitation codes or message bodies. SMTP acceptance does not guarantee inbox delivery; also inspect the provider's transactional logs and the recipient's spam folder. A warm function only schedules bootstrap mail on its first successful response; refreshing the health endpoint repeatedly does not force retries. Queued failures retain their backoff and terminal failures require an administrator retry or trusted operator intervention.
+
 ## 4. CAPTCHA
 
 Create a Cloudflare Turnstile widget if its current free option is suitable. Allow your production frontend hostname and set `CAPTCHA_SITE_KEY` and `CAPTCHA_SECRET` in Vercel. Production registration verifies the response server-side. Local development uses explicit test behaviour; the local email inbox is absent in production.

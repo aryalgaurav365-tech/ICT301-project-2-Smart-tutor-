@@ -460,13 +460,30 @@ test("mail leases prevent two workers claiming one delivery, with bounded failur
     attempts: 4,
     created_at: now(),
   });
+  const diagnostics = [];
   await jobs(db, {
+    logger: { error: (...args) => diagnostics.push(args) },
     transport: {
       sendMail: async () => {
-        throw new Error("Simulated SMTP failure");
+        throw Object.assign(new Error("secret-password-and-invitation"), {
+          code: "EAUTH",
+          responseCode: 535,
+          response: "secret-provider-response",
+          command: "AUTH secret-login",
+        });
       },
     },
   });
+  assert.deepEqual(diagnostics[0], [
+    "Mail delivery failed",
+    {
+      mailId: (await db("mail").where({ job_key: "failed-mail" }).first()).id,
+      attempt: 5,
+      code: "EAUTH",
+      smtpStatus: 535,
+    },
+  ]);
+  assert.equal(JSON.stringify(diagnostics).includes("secret-"), false);
   assert.equal(
     (await db("mail").where({ job_key: "failed-mail" }).first()).status,
     "failed",

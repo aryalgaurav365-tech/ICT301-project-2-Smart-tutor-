@@ -1,23 +1,40 @@
 import { randomBytes, createHash } from "node:crypto";
 import { z } from "zod";
 import { now } from "./db.js";
-export async function bootstrapAdmin(db, env = process.env) {
-  if (!env.INITIAL_ADMIN_EMAIL) return false;
+export async function bootstrapAdmin(db, env = process.env, logger = console) {
+  if (!env.INITIAL_ADMIN_EMAIL) {
+    logger.info(
+      "Administrator bootstrap disabled: INITIAL_ADMIN_EMAIL is not configured",
+    );
+    return false;
+  }
   const email = z.email().parse(env.INITIAL_ADMIN_EMAIL).toLowerCase();
-  if (await db("users").where({ role: "admin" }).first()) return false;
+  if (await db("users").where({ role: "admin" }).first()) {
+    logger.info(
+      "Administrator bootstrap skipped: an administrator already exists",
+    );
+    return false;
+  }
   if (
     await db("admin_invites")
       .where({ email, used_at: null })
       .where("expires_at", ">", now())
       .first()
-  )
-    return !!(await db("mail")
+  ) {
+    const pending = !!(await db("mail")
       .where({
         recipient: email,
         status: "pending",
         subject: "Your SmartTutor administrator invitation",
       })
       .first());
+    logger.info(
+      pending
+        ? "Administrator invitation already queued for delivery"
+        : "Administrator invitation exists without pending mail; check delivery status",
+    );
+    return pending;
+  }
   const code = randomBytes(32).toString("hex");
   await db.transaction(async (trx) => {
     await trx("admin_invites").insert({
@@ -33,5 +50,6 @@ export async function bootstrapAdmin(db, env = process.env) {
       created_at: now(),
     });
   });
+  logger.info("Administrator invitation queued for delivery");
   return true;
 }
