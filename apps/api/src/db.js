@@ -29,7 +29,11 @@ export function database(filename) {
   }
   return knex(
     mysql
-      ? { client: "mysql2", connection, pool: { min: 0, max: 5 } }
+      ? {
+          client: "mysql2",
+          connection,
+          pool: { min: 0, max: process.env.VERCEL ? 2 : 5 },
+        }
       : {
           client: "better-sqlite3",
           connection: { filename: file },
@@ -43,7 +47,7 @@ export function database(filename) {
         },
   );
 }
-export async function migrate(db) {
+async function migrateSchema(db) {
   const ref = (t, n, table = "users") =>
     t.integer(n).unsigned().references("id").inTable(table);
   const tables = {
@@ -193,4 +197,47 @@ export async function migrate(db) {
     if (!(await db.schema.hasTable(name)))
       await db.schema.createTable(name, columns);
   await upgrades(db);
+  // Reference categories are required even on a fresh production database.
+  // This does not create demo users, passwords, sessions or teaching content.
+  for (const [name, color] of [
+    ["Mathematics", "peach"],
+    ["Computer Science", "mint"],
+    ["English", "lavender"],
+    ["Physics", "blue"],
+    ["Business", "yellow"],
+    ["Chemistry", "pink"],
+  ]) {
+    await db("subjects").insert({ name, color }).onConflict("name").ignore();
+  }
+}
+
+// Serialize cold-start schema upgrades across Vercel instances on MySQL.
+export async function migrate(db) {
+  if (db.client.config.client !== "mysql2") return migrateSchema(db);
+  const connection = await db.client.acquireConnection();
+  let locked = false;
+  try {
+    const [rows] = await db
+      .raw(
+        "SELECT GET_LOCK(CONCAT('smarttutor:', LEFT(SHA2(DATABASE(),256),40)),25) AS acquired",
+      )
+      .connection(connection);
+    if (Number(rows[0].acquired) !== 1)
+      throw Object.assign(new Error("Database migration lock timed out"), {
+        code: "MIGRATION_BUSY",
+      });
+    locked = true;
+    await migrateSchema(db);
+  } finally {
+    try {
+      if (locked)
+        await db
+          .raw(
+            "SELECT RELEASE_LOCK(CONCAT('smarttutor:', LEFT(SHA2(DATABASE(),256),40)))",
+          )
+          .connection(connection);
+    } finally {
+      await db.client.releaseConnection(connection);
+    }
+  }
 }

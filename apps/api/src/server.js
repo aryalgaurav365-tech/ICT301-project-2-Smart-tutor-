@@ -2,17 +2,13 @@ import "./config.js";
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { database, migrate } from "./db.js";
-import { createApp, jobs } from "./app.js";
-if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL)
-  throw new Error("Production requires persistent MySQL via DATABASE_URL");
-const db = database();
-await migrate(db);
-const app = createApp(db),
-  web = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    "../../web/dist",
-  );
+import { initialize } from "./runtime.js";
+import { jobs } from "./jobs.js";
+const { db, app } = await initialize();
+const web = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../web/dist",
+);
 app.use(express.static(web));
 app.get("/{*path}", (req, res) => res.sendFile(path.join(web, "index.html")));
 let busy = false;

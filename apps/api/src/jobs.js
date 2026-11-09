@@ -3,8 +3,14 @@ import { randomBytes } from "node:crypto";
 import { now } from "./db.js";
 export async function jobs(
   db,
-  { transport, clock = () => new Date(), batchSize = 20 } = {},
+  {
+    transport,
+    clock = () => new Date(),
+    batchSize = 20,
+    deadlineMs = Infinity,
+  } = {},
 ) {
+  const deadline = Date.now() + deadlineMs;
   const at = clock().toISOString(),
     next = new Date(+clock() + 24 * 3600000).toISOString();
   const sessions = await db("sessions")
@@ -43,7 +49,7 @@ export async function jobs(
     secure: process.env.SMTP_PORT === "465",
     connectionTimeout: 10000,
     greetingTimeout: 10000,
-    socketTimeout: 30000,
+    socketTimeout: 10000,
     auth: process.env.SMTP_USER
       ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }
       : undefined,
@@ -58,9 +64,11 @@ export async function jobs(
     .where((b) =>
       b.whereNull("next_attempt_at").orWhere("next_attempt_at", "<=", at),
     )
+    .orderByRaw("CASE WHEN job_key LIKE 'auth:%' THEN 0 ELSE 1 END")
     .orderBy("id")
     .limit(batchSize);
   for (const m of pending) {
+    if (Date.now() + 15000 > deadline) break;
     const lease = randomBytes(24).toString("hex");
     const claimed = await db("mail")
       .where({ id: m.id, status: "pending" })

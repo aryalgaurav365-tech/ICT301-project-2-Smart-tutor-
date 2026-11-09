@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { createHash } from "node:crypto";
 import nodemailer from "nodemailer";
 import { storage } from "../apps/api/src/storage.js";
 import { database, migrate, now } from "../apps/api/src/db.js";
@@ -15,7 +16,30 @@ test("S3-compatible storage uploads privately and signs short-lived download lin
       authorization: req.headers.authorization,
     });
     const pathname = new URL(req.url, "http://localhost").pathname;
-    if (req.method === "PUT") {
+    if (req.method === "HEAD") {
+      const bytes = objects.get(pathname);
+      if (!bytes) {
+        res.statusCode = 404;
+        res.end();
+        return;
+      }
+      res.setHeader(
+        "ETag",
+        '"' + createHash("sha256").update(bytes).digest("hex") + '"',
+      );
+      res.setHeader("Content-Length", bytes.length);
+      res.setHeader("Content-Type", "application/pdf");
+      res.end();
+    } else if (req.method === "PUT" && req.headers["x-amz-copy-source"]) {
+      const source =
+        "/" +
+        decodeURIComponent(req.headers["x-amz-copy-source"]).replace(/^\//, "");
+      objects.set(pathname, Buffer.from(objects.get(source)));
+      res.setHeader("Content-Type", "application/xml");
+      res.end(
+        '<CopyObjectResult><ETag>"copied"</ETag><LastModified>2026-11-09T00:00:00.000Z</LastModified></CopyObjectResult>',
+      );
+    } else if (req.method === "PUT") {
       const chunks = [];
       for await (const b of req) chunks.push(b);
       objects.set(pathname, Buffer.concat(chunks));
@@ -23,7 +47,11 @@ test("S3-compatible storage uploads privately and signs short-lived download lin
       res.end();
     } else if (req.method === "GET") {
       res.setHeader("Content-Type", "application/pdf");
-      res.end(objects.get(pathname));
+      const bytes = objects.get(pathname);
+      if (req.headers.range === "bytes=0-4") {
+        res.statusCode = 206;
+        res.end(bytes.subarray(0, 5));
+      } else res.end(bytes);
     } else {
       objects.delete(pathname);
       res.statusCode = 204;
@@ -75,6 +103,49 @@ test("S3-compatible storage uploads privately and signs short-lived download lin
     await store.remove(key);
     assert.equal(objects.size, 0);
     await assert.rejects(store.send({}, "s3:../private-key"));
+    const bytes = Buffer.alloc(20 * 1024 * 1024, 32);
+    bytes.write("%PDF-1.4");
+    const ticket = await store.stagePdf(bytes.length);
+    assert.equal(new URL(ticket.url).searchParams.get("X-Amz-Expires"), "300");
+    assert.equal(
+      (
+        await fetch(ticket.url, {
+          method: "PUT",
+          headers: { "Content-Type": "application/pdf" },
+          body: bytes,
+        })
+      ).status,
+      200,
+    );
+    const final = await store.promotePdf(ticket.key, bytes.length);
+    assert.ok(final.startsWith("s3:") && !final.includes("staging/"));
+    await store.send(
+      {
+        redirect: (url) => {
+          signed = url;
+        },
+      },
+      final,
+      { attachment: true },
+    );
+    assert.equal(
+      (await fetch(signed).then((r) => r.arrayBuffer())).byteLength,
+      20 * 1024 * 1024,
+    );
+    // Reusing the short-lived staging URL cannot overwrite validated final content.
+    await fetch(ticket.url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/pdf" },
+      body: Buffer.alloc(bytes.length, 65),
+    });
+    const original = await fetch(signed).then((r) => r.arrayBuffer());
+    assert.equal(Buffer.from(original).subarray(0, 5).toString(), "%PDF-");
+    await assert.rejects(
+      store.promotePdf(ticket.key, bytes.length),
+      (e) => e.status === 400,
+    );
+    await store.remove("s3:" + ticket.key);
+    await store.remove(final);
   } finally {
     for (const k of keys)
       if (previous[k] === undefined) delete process.env[k];

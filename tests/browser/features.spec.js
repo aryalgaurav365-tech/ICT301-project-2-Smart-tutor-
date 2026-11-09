@@ -127,3 +127,83 @@ test("sensitive-action dialog supports keyboard focus and escape", async ({
     }),
   ).toBeFocused();
 });
+
+test("20 MB PDF uploads use a signed storage request rather than the API request body", async ({
+  page,
+}) => {
+  const { createServer } = await import("node:http");
+  const uploads = [];
+  const server = createServer(async (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "PUT,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    if (req.method === "OPTIONS") {
+      res.end();
+      return;
+    }
+    let size = 0;
+    for await (const chunk of req) size += chunk.length;
+    uploads.push({ method: req.method, size });
+    res.end();
+  }).listen(0, "127.0.0.1");
+  await new Promise((r) => server.once("listening", r));
+  try {
+    await login(page, "elena");
+    const metadata = [],
+      completed = [];
+    await page.route("**/api/config", async (route) => {
+      const r = await route.fetch();
+      await route.fulfill({
+        json: { ...(await r.json()), directPdfUploads: true },
+      });
+    });
+    await page.route("**/api/uploads/pdf", (route) => {
+      metadata.push(route.request().postDataJSON());
+      return route.fulfill({
+        status: 201,
+        json: {
+          ticket: 123,
+          url: "http://127.0.0.1:" + server.address().port + "/signed-pdf",
+        },
+      });
+    });
+    await page.route("**/api/uploads/pdf/complete", (route) => {
+      completed.push(route.request().postDataJSON());
+      return route.fulfill({
+        status: 201,
+        json: { id: 123, message: "PDF resource saved" },
+      });
+    });
+    await page.goto("/dashboard/upload");
+    await page
+      .getByRole("button", { name: "PDF document", exact: true })
+      .click();
+    await page
+      .getByLabel("Resource title", { exact: true })
+      .fill("Large PDF through direct storage");
+    await page
+      .getByLabel("Description", { exact: true })
+      .fill("Exercise a twenty megabyte browser upload.");
+    const file = Buffer.alloc(20 * 1024 * 1024, 32);
+    file.write("%PDF-1.4");
+    await page
+      .getByLabel("PDF (maximum 20 MB)")
+      .setInputFiles({
+        name: "large-lesson.pdf",
+        mimeType: "application/pdf",
+        buffer: file,
+      });
+    await page
+      .getByRole("button", { name: "Save resource", exact: true })
+      .click();
+    await expect(
+      page.getByText("PDF resource saved", { exact: true }),
+    ).toBeVisible();
+    expect(metadata[0].file_size).toBe(20 * 1024 * 1024);
+    expect(JSON.stringify(metadata[0]).length).toBeLessThan(1024);
+    expect(uploads).toEqual([{ method: "PUT", size: 20 * 1024 * 1024 }]);
+    expect(completed[0]).toEqual({ ticket: 123 });
+  } finally {
+    await new Promise((r) => server.close(r));
+  }
+});

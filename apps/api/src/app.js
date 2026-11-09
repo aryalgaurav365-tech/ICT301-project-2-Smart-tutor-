@@ -42,10 +42,11 @@ export function createApp(
   {
     production = process.env.NODE_ENV === "production",
     dataDir = path.resolve(process.env.DATA_DIR || "data"),
+    fileStore,
   } = {},
 ) {
   const app = express();
-  const store = storage({ dataDir, production });
+  const store = fileStore || storage({ dataDir, production });
   app.disable("x-powered-by");
   if (process.env.TRUST_PROXY)
     app.set("trust proxy", Number(process.env.TRUST_PROXY));
@@ -193,6 +194,10 @@ export function createApp(
     res.json({
       demo: !production,
       captchaSiteKey: process.env.CAPTCHA_SITE_KEY || null,
+      directPdfUploads: store.remote,
+      maxProfilePhotoBytes: process.env.VERCEL
+        ? 3 * 1024 * 1024
+        : 5 * 1024 * 1024,
     }),
   );
   app.get("/api/auth/me", (req, res) => res.json({ user: safe(req.user) }));

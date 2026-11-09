@@ -3,6 +3,8 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  HeadObjectCommand,
+  CopyObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import fs from "node:fs/promises";
@@ -14,6 +16,7 @@ export function storage({ dataDir, production }) {
     ? new S3Client({
         region: process.env.S3_REGION || "auto",
         endpoint: process.env.S3_ENDPOINT || undefined,
+        requestChecksumCalculation: "WHEN_REQUIRED",
         forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
         credentials: process.env.S3_ACCESS_KEY_ID
           ? {
@@ -24,13 +27,86 @@ export function storage({ dataDir, production }) {
       })
     : null;
   const keyPath = (key) => {
-    if (!/^[a-f0-9]{48}\.(pdf|webp)$/.test(key))
+    if (!/^(?:staging\/)?[a-f0-9]{48}\.(pdf|webp)$/.test(key))
       throw new Error("Invalid storage key");
     return path.join(dataDir, "uploads", key);
   };
   return {
     available: !production || remote || process.env.PERSISTENT_DISK === "true",
     remote,
+    async stagePdf(size) {
+      if (!client)
+        throw Object.assign(
+          new Error("Direct uploads require private object storage"),
+          { status: 503 },
+        );
+      const key = "staging/" + randomBytes(24).toString("hex") + ".pdf";
+      const url = await getSignedUrl(
+        client,
+        new PutObjectCommand({
+          Bucket: process.env.S3_BUCKET,
+          Key: key,
+          ContentType: "application/pdf",
+          ContentLength: size,
+        }),
+        { expiresIn: 300 },
+      );
+      return { key, url };
+    },
+    async promotePdf(key, expectedSize) {
+      if (!client || !key.startsWith("staging/"))
+        throw new Error("Invalid staging object");
+      keyPath(key);
+      const head = await client.send(
+        new HeadObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key }),
+      );
+      if (
+        head.ContentLength !== expectedSize ||
+        expectedSize < 5 ||
+        expectedSize > 20 * 1024 * 1024 ||
+        head.ContentType !== "application/pdf"
+      )
+        throw Object.assign(
+          new Error("Uploaded PDF size or type does not match"),
+          { status: 400 },
+        );
+      if (!head.ETag)
+        throw Object.assign(
+          new Error("Object storage did not provide an integrity tag"),
+          { status: 503 },
+        );
+      const sample = await client.send(
+        new GetObjectCommand({
+          Bucket: process.env.S3_BUCKET,
+          Key: key,
+          Range: "bytes=0-4",
+          IfMatch: head.ETag,
+        }),
+      );
+      if (
+        Buffer.from(await sample.Body.transformToByteArray())
+          .subarray(0, 5)
+          .toString() !== "%PDF-"
+      )
+        throw Object.assign(new Error("Choose a valid PDF document"), {
+          status: 400,
+        });
+      const final = randomBytes(24).toString("hex") + ".pdf";
+      await client.send(
+        new CopyObjectCommand({
+          Bucket: process.env.S3_BUCKET,
+          Key: final,
+          CopySource:
+            process.env.S3_BUCKET +
+            "/" +
+            key.split("/").map(encodeURIComponent).join("/"),
+          ContentType: "application/pdf",
+          MetadataDirective: "REPLACE",
+          CopySourceIfMatch: head.ETag,
+        }),
+      );
+      return "s3:" + final;
+    },
     async put(buffer, extension, type) {
       if (production && !remote && process.env.PERSISTENT_DISK !== "true")
         throw Object.assign(

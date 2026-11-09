@@ -1570,7 +1570,8 @@ function People() {
 }
 function UploadResource() {
   const [subjects] = useData("/subjects"),
-    [type, setType] = useState("link");
+    [type, setType] = useState("link"),
+    [config] = useData("/config");
   return (
     <>
       <h1>
@@ -1579,11 +1580,38 @@ function UploadResource() {
       <p>Your perspective could be someone else’s breakthrough.</p>
       <div className="panel">
         <Form
-          endpoint={type === "pdf" ? "/tutorials/pdf" : "/tutorials"}
-          submit="Save resource"
-          transform={(f) =>
-            type === "pdf" ? f : { ...Object.fromEntries(f), type }
+          endpoint={
+            type === "pdf"
+              ? config?.directPdfUploads
+                ? "/uploads/pdf/complete"
+                : "/tutorials/pdf"
+              : "/tutorials"
           }
+          submit="Save resource"
+          transform={async (f) => {
+            if (type !== "pdf") return { ...Object.fromEntries(f), type };
+            if (!config?.directPdfUploads) return f;
+            const file = f.get("file");
+            if (!file || file.size > 20 * 1024 * 1024 || file.size < 5)
+              throw new Error("Choose a PDF up to 20 MB");
+            const metadata = Object.fromEntries(
+              [...f.entries()].filter(([key]) => key !== "file"),
+            );
+            const ticket = await api("/uploads/pdf", {
+              method: "POST",
+              body: { ...metadata, file_size: file.size },
+            });
+            const result = await fetch(ticket.url, {
+              method: "PUT",
+              headers: { "Content-Type": "application/pdf" },
+              body: file,
+            });
+            if (!result.ok)
+              throw new Error(
+                "Upload failed. Check your connection and try again.",
+              );
+            return { ticket: ticket.ticket };
+          }}
           onDone={(r, f) => f.reset()}
         >
           <Field label="Resource title" name="title" required />

@@ -4,7 +4,7 @@ A responsive tutoring application built with React/Vite, Express and Knex. Stude
 
 ## Run locally
 
-Node.js 22.13+ required; Node 24 recommended. From the repository root:
+Node.js 24.x is required. From the repository root:
 
 ```sh
 npm ci
@@ -40,7 +40,7 @@ Browser tests use `/usr/bin/chromium`; set `CHROMIUM_PATH` for another location.
 
 ## Hosting
 
-The app runs on any suitable Node host with `npm ci && npm run build` followed by `npm start`. The API serves both its routes and the React build, so a single-host deployment needs no frontend changes. Production requires `DATABASE_URL` for persistent MySQL and `APP_URL` for the public HTTPS origin. Configuration is loaded from repository-root `.env` locally; use provider secret settings in production.
+The app runs on Vercel or any suitable Node host with `npm ci && npm run build` followed by `npm start`. The API serves both its routes and the React build, so a single-host deployment needs no frontend changes. Production requires `DATABASE_URL` for persistent MySQL and `APP_URL` for the public HTTPS origin. Configuration is loaded from repository-root `.env` locally; use provider secret settings in production.
 
 For Vercel frontend + Render API, see [deployment instructions](docs/DEPLOYMENT.md). Relative `/api` requests go through a same-origin reverse proxy. There is no Vercel SDK dependency in application logic.
 
@@ -48,7 +48,7 @@ For Vercel frontend + Render API, see [deployment instructions](docs/DEPLOYMENT.
 
 Implemented: responsive public pages, role-based portals, tutor discovery/profiles/photos, resource filters, verification/welcome emails, OTP authentication/reset, one-time admin invitations and re-authentication, tutor approval, availability, conflict-checked assignment, cancellation/rescheduling requests, private messaging, notifications, draft/content management, reviews, date-filtered analytics, three report formats, admin enrollment, audit/delivery views and contact enquiries.
 
-Local email capture, storage and SQLite make the app usable without service accounts. Production also supports MySQL with verified TLS and private S3-compatible object storage. These provider paths need live account verification. Messaging refreshes every five seconds. Email workers use bounded retries and leases; reminders still depend on an awake worker or scheduled workflow and cannot promise exact timing on free hosts.
+Local email capture, storage and SQLite make the app usable without service accounts. Production supports MySQL with verified TLS and private S3-compatible object storage. The committed Vercel configuration runs the API and frontend in one project; Render is optional. These provider paths need live account verification. Messaging refreshes every five seconds. Email workers use bounded retries and leases; reminders still depend on an awake worker or scheduled workflow and cannot promise exact timing on free hosts.
 
 Start deployment with [the Vercel account/setup guide](docs/VERCEL_SETUP.md), then follow [hosting details](docs/DEPLOYMENT.md). The app has not been deployed to a public URL. The complete local test/build evidence and remaining live prerequisites are separated in [STATUS.md](docs/STATUS.md).
 

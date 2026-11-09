@@ -104,7 +104,7 @@ function Form({
         setError("");
         try {
           const f = new FormData(form);
-          const body = transform ? transform(f) : Object.fromEntries(f);
+          const body = transform ? await transform(f) : Object.fromEntries(f);
           const r = await api(endpoint, { method, body });
           toast(r.message || "Saved successfully");
           await onDone?.(r, form);

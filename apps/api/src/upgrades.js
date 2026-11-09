@@ -1,5 +1,5 @@
 // Incremental, additive migrations. Run one migration process during deployment.
-export async function upgrades(db) {
+async function upgradeTwo(db) {
   if (!(await db.schema.hasTable("schema_versions")))
     await db.schema.createTable("schema_versions", (t) => {
       t.string("version").primary();
@@ -57,6 +57,30 @@ export async function upgrades(db) {
       await db.schema.createTable(name, define);
   await db("schema_versions").insert({
     version: "002-complete-workflows",
+    applied_at: new Date().toISOString(),
+  });
+}
+
+export async function upgrades(db) {
+  await upgradeTwo(db);
+  if (
+    await db("schema_versions").where({ version: "003-direct-uploads" }).first()
+  )
+    return;
+  if (!(await db.schema.hasTable("upload_tickets")))
+    await db.schema.createTable("upload_tickets", (t) => {
+      t.increments();
+      t.integer("user_id").unsigned().references("id").inTable("users");
+      t.string("object_key").unique();
+      t.integer("file_size");
+      t.text("metadata");
+      t.string("status").defaultTo("pending");
+      t.integer("tutorial_id").unsigned().references("id").inTable("tutorials");
+      t.string("expires_at");
+      t.string("created_at");
+    });
+  await db("schema_versions").insert({
+    version: "003-direct-uploads",
     applied_at: new Date().toISOString(),
   });
 }

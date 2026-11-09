@@ -1,72 +1,63 @@
-# Put SmartTutor online: start with Vercel
+# Deploy SmartTutor on Vercel
 
-This guide deliberately separates account setup from deployment. Vercel serves the browser application; the app also needs an API server, persistent MySQL, outbound email, CAPTCHA and private object storage. A frontend deployment by itself will not provide working login/bookings.
+The repository now includes a Vercel Node function for the API and a static React build for the frontend. Render is optional. No Vercel account credentials, live database or other service credentials are stored in the repository.
 
-No accounts or paid services have been created for you. Current free-plan availability must be checked during signup. Do not enable paid upgrades, automatic paid overages, or a trial that charges later. Use provider subdomains to avoid buying a domain.
+## 1. Import this repository
 
-## 1. Create your Vercel account
+1. In Vercel choose **Add New → Project** and import `aryalgaurav365-tech/ICT301-project-2-Smart-tutor-`, branch `main`.
+2. If Vercel detects **Services**, change **Application Preset** to **Other**. Do not import the API or web folder as standalone services for this topology.
+3. Keep **Root Directory** at `./` (repository root).
+4. Choose a project name such as `smarttutor` if available, and retain an eligible free Hobby plan.
+5. Use **Build Command** `npm run build`, **Output Directory** `apps/web/dist`, **Install Command** `npm ci`, and Node.js **24.x**. The committed `vercel.json` provides the build settings, API routing and SPA fallback.
 
-1. Visit https://vercel.com and choose **Sign up**.
-2. Choose **Continue with GitHub** and connect your GitHub account.
-3. Select the free **Hobby** plan if it is currently offered and you are eligible. Stop if payment is required.
-4. Choose **Add New → Project**, then import `aryalgaurav365-tech/ICT301-project-2-Smart-tutor-`. If it is missing, use Vercel's GitHub access controls to grant access to that repository only.
-5. Use the branch containing the application (`main` once the tested implementation is integrated; development is also on `phase2-webapp`). Keep the **Root Directory** at the repository root.
-6. Configure **Build Command**: `npm run build`; **Output Directory**: `apps/web/dist`; **Install Command**: `npm ci`. If framework detection is unclear, select **Other** and use those commands.
-7. Do not treat a static frontend preview as the finished app. Complete API setup and the reverse proxy below before validating a release.
+A first deployment can establish your project URL and show the frontend before the external services are configured. API routes will return a clear temporary-unavailability response while the database is missing. That initial frontend deployment is not a fully working release.
 
-UI labels may change. If a screen differs, describe its fields; no passwords or secret keys are needed in chat.
+Vercel UI labels may change. Never accept a paid upgrade or trial that charges later merely to complete these steps.
 
-## 2. Prepare a free API and database
+## 2. Add persistent MySQL
 
-- Create a Render account connected to GitHub. Choose **New → Web Service**, select the repository/application branch, Node runtime and the free instance if available. Build: `npm ci && npm run build`; start: `npm start`; health check: `/api/health`. The included `render.yaml` describes this setup.
-- Obtain a persistent MySQL database from a provider with a genuinely free current plan. Aiven free MySQL is a candidate, subject to availability. Vercel's frontend does not supply MySQL automatically. Do not choose a paid database or assume historical PlanetScale plans still exist.
-- Enter `DATABASE_URL` in Render's **Environment** settings, not GitHub source or chat. Set `DB_SSL=true`. If the provider requires its own CA certificate, upload it through the host's secure-file mechanism and set `DB_SSL_CA_FILE` to that path. Keep certificate verification enabled.
-- Set `NODE_ENV=production`, `APP_URL` to the intended Vercel HTTPS URL, and `TRUST_PROXY=1` only for the documented hosting topology.
-- Configure the email and CAPTCHA settings in steps 4 and 5. Render free hosts can sleep: waking the API can delay first requests and outgoing email.
+Create a database with a provider whose currently available free plan you have checked. Aiven free MySQL is a candidate, not a pricing guarantee. Vercel does not create MySQL automatically.
 
-## 3. Connect Vercel to the API
+In Vercel **Project → Settings → Environment Variables**, add the connection as `DATABASE_URL` and enable `DB_SSL=true`. Credentials belong in the provider's secure settings, not chat or GitHub. Set `DB_SSL_CA_FILE` only if you have deployed a required provider CA file securely; keep certificate verification enabled.
 
-Once the API hostname exists, run from a trusted checkout:
+Also set `APP_URL` to your public HTTPS production origin, for example `https://your-project.vercel.app`. The function can use Vercel's `VERCEL_PROJECT_PRODUCTION_URL` when available, but explicitly setting `APP_URL` removes ambiguity for email links and origin checks. Redeploy after changing environment settings.
 
-```sh
-DEPLOY_API_ORIGIN=https://YOUR-API.onrender.com node scripts/configure-vercel.mjs
-```
+The first cold start creates the schema, applies additive upgrades, and inserts subject categories. It does not create demo users, credentials, session records, or fake teaching content. MySQL schema initialization uses an advisory lock to serialize concurrent cold starts.
 
-The generated `vercel.json` contains a public hostname, not a secret. Commit it and redeploy Vercel. `/api/*` must be rewritten to the API **before** the SPA fallback. This keeps login cookies on the frontend's origin. Set Render's `APP_URL` to that same Vercel URL. Custom domains are optional; changing the frontend URL requires updating `APP_URL` and CAPTCHA allowed domains.
+## 3. Configure email and first administrator
 
-Share only the public Render/Vercel URLs with the development session when ready, so the actual configuration can be generated and reviewed.
+Choose a provider whose current free transactional-email allowance and sender-verification requirements suit the project. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `MAIL_FROM` securely in Vercel. Verify the sender through that provider.
 
-## 4. Configure real email
+Set `INITIAL_ADMIN_EMAIL` to the intended administrator's email. Before an admin exists, initialization queues an email-bound, single-use invitation expiring in 48 hours. Opening the site triggers a bounded post-response delivery batch. Register using the invitation, verify the email, and sign in with the emailed OTP. Later administrators are invited from **Admin tools**. A trusted operator can alternatively use `npm run admin:invite -- email` with securely configured database access.
 
-Choose an email service whose current free allowance and sender-verification requirements you have checked. A transactional SMTP provider is supported; no particular provider's pricing is guaranteed. Verify your sender address and add `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `MAIL_FROM` securely on Render. Use the provider's exact settings.
+Vercel functions do not run a persistent timer. The API schedules bounded mail batches using Vercel's supported `waitUntil` lifecycle helper after successful mutations; login/verification mail is prioritized. The optional scheduled worker below drains outstanding queues and processes reminders while nobody is using the site. Real SMTP delivery must be verified before calling authentication ready.
 
-Until real SMTP is configured, production email verification, OTP login, resets and reminders cannot be considered working. The local development inbox is intentionally absent in production.
+## 4. CAPTCHA
 
-## 5. CAPTCHA and private storage
+Create a Cloudflare Turnstile widget if its current free option is suitable. Allow your production frontend hostname and set `CAPTCHA_SITE_KEY` and `CAPTCHA_SECRET` in Vercel. Production registration verifies the response server-side. Local development uses explicit test behaviour; the local email inbox is absent in production.
 
-- Create a Cloudflare Turnstile widget if its free option meets your requirements. Register the Vercel hostname and add `CAPTCHA_SITE_KEY` and `CAPTCHA_SECRET` securely on Render. Production registration verifies CAPTCHA server-side.
-- Use a private S3-compatible bucket for PDFs/profile photos. Set `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and, if required, `S3_FORCE_PATH_STYLE=true`. Restrict the storage key to the application's bucket and required object operations.
-- Only accept a storage service if its current free allowance is suitable and paid overages are disabled or understood. Cloudflare R2 and other S3-compatible services are candidates, not a guarantee of no-card signup. If every option requires billing you do not want, stop and choose a different service with assistance.
-- Do not enable `PERSISTENT_DISK` on ephemeral Render free disk. Authenticated API checks precede short-lived signed PDF download links. Buckets must remain private.
+## 5. Private file storage
 
-## 6. Provision your first administrator
+Use a private S3-compatible bucket with a currently suitable free allowance. Set `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and, if needed, `S3_FORCE_PATH_STYLE=true` in Vercel. Restrict credentials to the application's bucket and required object operations. Provider account, billing and free allowances must be checked before signup; no zero-cost guarantee is implied.
 
-From a trusted machine/workspace with the production database connection set securely:
+For PDF uploads, the authenticated API creates a five-minute signed upload ticket. The browser PUTs the PDF directly to private storage. The API then checks ownership, size/type, the PDF signature and the object's integrity tag before copying the validated object to a different final key. A reused staging URL cannot overwrite the published resource. Downloads require API authorization before a 60-second signed URL is issued.
 
-```sh
-npm run admin:invite -- your-email@example.com
-```
+This direct path supports the project's 20 MB PDF requirement without passing a 20 MB request through a Vercel function. Set bucket CORS to allow `PUT` from your exact frontend origin and the `Content-Type` header. Add a bucket lifecycle rule to expire the `staging/` prefix after one day so abandoned uploads do not accumulate. Keep all bucket objects private; do not enable public listing or public reads.
 
-This queues an email-bound, single-use invitation that expires in 48 hours. The command does not print the invitation token or create a demo admin. The configured mail worker sends it. Register as an invited admin, verify the email, then sign in using the emailed OTP. Existing admins can invite more admins through **Admin tools** after confirming their password. Never run `db:seed` against production.
+Profile images are processed in the function and limited to 3 MB on Vercel (5 MB on a standalone Node host). Never use local SQLite or local uploaded files as persistent Vercel storage.
 
-## 7. Reminders while the API sleeps
+## 6. Scheduled reminders
 
-An optional GitHub Actions workflow, `Scheduled email and session reminders`, runs hourly when you explicitly enable the repository variable `ENABLE_SMARTTUTOR_REMINDERS=true` and securely configure the matching Actions secrets listed in that workflow. This is separate from Render settings. Check your GitHub Actions free-minute allowance before enabling it.
+An optional GitHub Actions workflow, `Scheduled email and session reminders`, runs hourly after you explicitly enable the repository variable `ENABLE_SMARTTUTOR_REMINDERS=true` and configure the matching Actions secrets. Check free-minute allowances before enabling it. Its database TLS/CA requirements apply independently of Vercel.
 
-Hourly runs are not exact-time delivery, and scheduled Actions can be delayed or disabled by GitHub. Provider CA requirements also apply on this runner. For a contractual timing guarantee, choose a suitable always-running worker/scheduler; no uptime guarantee is claimed for free hosting.
+Hourly schedules are not exact-time delivery, and GitHub may delay them. For an uptime or timing guarantee, choose a suitable worker/scheduler. No free-host SLA is claimed.
 
-## 8. Verify the complete deployed application
+## 7. Verify the live release
 
-Through the final Vercel URL: register a student and tutor, receive real verification/OTP messages, approve the tutor as admin, set availability, request and assign a session, exchange messages, upload/download a private PDF, test a reschedule/cancellation, publish a draft, export all three report formats and check analytics. Restart/redeploy the API and confirm records and files remain. Rehearse database and storage restore before real student use.
+Through the final Vercel URL: register a student and tutor, receive real verification/OTP mail, approve the tutor, set availability, assign a request, exchange messages, publish a draft, upload/download a private PDF, process a session change and export reports. Redeploy and confirm database/file persistence. Rehearse database and bucket restore before using real student data.
 
-The app is live only after these checks succeed. User acceptance, actual branding/contact details, privacy/age policy and tutor credential verification still need the operator's input.
+Only share public project/deployment URLs with this chat. Do not send passwords, invitation tokens, database URLs or API keys. Local automated tests validate the implementation; a real provider-backed release remains unverified until the above checks succeed.
+
+## Alternative: Vercel frontend and a separate Node API
+
+The app still runs on any compatible Node host with `npm run build` then `npm start`. `render.yaml` remains available for that alternative. If choosing it, `DEPLOY_API_ORIGIN=https://your-api.example node scripts/configure-vercel.mjs` replaces the Vercel configuration with an external API proxy. Do not run that generator for the all-on-Vercel setup.

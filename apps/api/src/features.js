@@ -69,7 +69,7 @@ export function features(app, db, { auth, notify, mail, audit, store }) {
   });
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+    limits: { fileSize: (process.env.VERCEL ? 3 : 5) * 1024 * 1024, files: 1 },
   });
   app.post(
     "/api/profile/photo",
@@ -131,6 +131,71 @@ export function features(app, db, { auth, notify, mail, audit, store }) {
       message: "Administrator invitation emailed. It expires in 48 hours.",
     });
   });
+  app.post("/api/uploads/pdf", auth("tutor", "admin"), async (req, res) => {
+    const s = z
+      .object({
+        title: text.max(255),
+        description: text,
+        subject_id: id,
+        difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]),
+        status: z.enum(["draft", "published"]),
+        file_size: z
+          .number()
+          .int()
+          .min(5)
+          .max(20 * 1024 * 1024),
+      })
+      .parse(req.body);
+    const ticket = await store.stagePdf(s.file_size),
+      { file_size, ...metadata } = s;
+    const [tid] = await db("upload_tickets").insert({
+      user_id: req.user.id,
+      object_key: ticket.key,
+      file_size,
+      metadata: JSON.stringify(metadata),
+      expires_at: new Date(Date.now() + 15 * 60000).toISOString(),
+      created_at: now(),
+    });
+    res.status(201).json({ ticket: tid, url: ticket.url });
+  });
+  app.post(
+    "/api/uploads/pdf/complete",
+    auth("tutor", "admin"),
+    async (req, res) => {
+      const { ticket } = z.object({ ticket: id }).parse(req.body);
+      let final;
+      try {
+        const tid = await db.transaction(async (trx) => {
+          let q = trx("upload_tickets").where({
+            id: ticket,
+            user_id: req.user.id,
+          });
+          if (db.client.config.client === "mysql2") q = q.forUpdate();
+          const t = await q.first();
+          if (!t) fail(404, "Upload ticket not found");
+          if (t.status === "complete") return t.tutorial_id;
+          if (t.status !== "pending" || t.expires_at < now())
+            fail(400, "Upload ticket expired. Try the upload again.");
+          final = await store.promotePdf(t.object_key, t.file_size);
+          const [tid] = await trx("tutorials").insert({
+            ...JSON.parse(t.metadata),
+            type: "pdf",
+            file: final,
+            tutor_id: req.user.id,
+            created_at: now(),
+          });
+          await trx("upload_tickets")
+            .where({ id: ticket })
+            .update({ status: "complete", tutorial_id: tid });
+          return tid;
+        });
+        res.status(201).json({ id: tid, message: "PDF resource saved" });
+      } catch (e) {
+        if (final) await store.remove(final).catch(() => {});
+        throw e;
+      }
+    },
+  );
   app.get("/api/my/tutorials", auth("tutor", "admin"), async (req, res) =>
     res.json(
       await db("tutorials")

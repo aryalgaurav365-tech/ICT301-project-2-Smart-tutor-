@@ -58,6 +58,7 @@ export function Reauthenticate() {
 export function Profile() {
   const [profile, error, reload] = useData("/profile"),
     [subjects] = useData("/subjects"),
+    [config] = useData("/config"),
     { user, setUser } = useApp();
   return (
     <>
@@ -157,7 +158,13 @@ export function Profile() {
               onDone={reload}
             >
               <Field
-                label="JPEG, PNG or WebP (up to 5 MB)"
+                label={
+                  "JPEG, PNG or WebP (up to " +
+                  (config?.maxProfilePhotoBytes || 5 * 1024 * 1024) /
+                    1024 /
+                    1024 +
+                  " MB)"
+                }
                 type="file"
                 name="file"
                 accept="image/jpeg,image/png,image/webp"
