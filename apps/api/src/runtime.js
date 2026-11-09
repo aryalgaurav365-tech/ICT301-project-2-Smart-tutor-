@@ -33,6 +33,7 @@ export async function initialize({
       db,
       app: makeApp(db, {
         production: env.NODE_ENV === "production" || !!env.VERCEL,
+        proxyHops: env.TRUST_PROXY ?? (env.VERCEL ? 1 : 0),
       }),
     };
   } catch (e) {

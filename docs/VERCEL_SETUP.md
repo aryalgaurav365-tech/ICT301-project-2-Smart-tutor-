@@ -26,6 +26,8 @@ Also set `APP_URL` to your public HTTPS production origin, for example `https://
 
 The first cold start creates the schema, applies additive upgrades, and inserts subject categories. It does not create demo users, credentials, session records, or fake teaching content. MySQL schema initialization uses an advisory lock to serialize concurrent cold starts.
 
+On Vercel the API defaults to trusting one upstream proxy hop so Express identifies clients from the platform's forwarded address rather than rate-limiting all users together. Direct local/Node hosting defaults to trusting no proxy. `TRUST_PROXY` can explicitly set a nonnegative hop count for a different deployment topology; never use unrestricted proxy trust.
+
 ## 3. Configure email and first administrator
 
 Choose a provider whose current free transactional-email allowance and sender-verification requirements suit the project. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `MAIL_FROM` securely in Vercel. Verify the sender through that provider.

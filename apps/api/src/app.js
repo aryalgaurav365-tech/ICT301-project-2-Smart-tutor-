@@ -43,13 +43,23 @@ export function createApp(
     production = process.env.NODE_ENV === "production",
     dataDir = path.resolve(process.env.DATA_DIR || "data"),
     fileStore,
+    proxyHops = process.env.TRUST_PROXY ?? (process.env.VERCEL ? 1 : 0),
   } = {},
 ) {
   const app = express();
   const store = fileStore || storage({ dataDir, production });
   app.disable("x-powered-by");
-  if (process.env.TRUST_PROXY)
-    app.set("trust proxy", Number(process.env.TRUST_PROXY));
+  const hops = Number(proxyHops);
+  if (!Number.isInteger(hops) || hops < 0)
+    throw Object.assign(
+      new Error("TRUST_PROXY must be a nonnegative integer"),
+      {
+        code: "CONFIG_PROXY",
+      },
+    );
+  // Vercel supplies the client address through its upstream proxy. Trust only
+  // that hop, not arbitrary entries a client might add to the forwarded chain.
+  app.set("trust proxy", hops === 0 ? false : hops);
   app.use(
     helmet({
       contentSecurityPolicy: production

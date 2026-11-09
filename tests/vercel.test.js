@@ -228,3 +228,47 @@ test("production initialization accepts complete separate database fields", asyn
     await db.destroy();
   }
 });
+
+test("Vercel proxy clients have separate rate limits and cannot select the leftmost forwarded address", async () => {
+  const db = database(":memory:");
+  await migrate(db);
+  const runtime = await initialize({
+    env: {
+      VERCEL: "1",
+      DB_HOST: "example.test",
+      DB_USER: "test",
+      DB_PASSWORD: "test",
+      DB_NAME: "test",
+      APP_URL: "https://smarttutor.test",
+    },
+    makeDatabase: () => db,
+  });
+  assert.equal(runtime.app.get("trust proxy"), 1);
+  const { server, base } = await listen(runtime.app);
+  const request = (fake, client) =>
+    fetch(base + "/api/auth/me", {
+      headers: {
+        "x-forwarded-for": `${fake}, ${client}`,
+        forwarded: `for=${fake}`,
+      },
+    });
+  try {
+    const first = await request("203.0.113.1", "198.51.100.1");
+    assert.equal(first.status, 200);
+    assert.match(first.headers.get("ratelimit"), /r=99;/);
+    await first.arrayBuffer();
+    const spoofed = await request("203.0.113.2", "198.51.100.1");
+    assert.match(spoofed.headers.get("ratelimit"), /r=98;/);
+    await spoofed.arrayBuffer();
+    const other = await request("203.0.113.1", "198.51.100.2");
+    assert.match(other.headers.get("ratelimit"), /r=99;/);
+    await other.arrayBuffer();
+    assert.equal(createApp(db, { proxyHops: 0 }).get("trust proxy"), false);
+    assert.throws(() => createApp(db, { proxyHops: "true" }), {
+      code: "CONFIG_PROXY",
+    });
+  } finally {
+    await close(server);
+    await db.destroy();
+  }
+});
