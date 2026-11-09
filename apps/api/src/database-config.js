@@ -66,7 +66,13 @@ export function mysqlConnection(env = process.env) {
       new Error("Choose an application database rather than a system database"),
       { code: "CONFIG_DATABASE" },
     );
-  if (env.DB_SSL === "true" || env.DB_SSL_CA || env.DB_SSL_CA_FILE) {
+  if (
+    env.NODE_ENV === "production" ||
+    env.VERCEL ||
+    env.DB_SSL === "true" ||
+    env.DB_SSL_CA ||
+    env.DB_SSL_CA_FILE
+  ) {
     connection.ssl = {
       rejectUnauthorized: true,
       minVersion: "TLSv1.2",
