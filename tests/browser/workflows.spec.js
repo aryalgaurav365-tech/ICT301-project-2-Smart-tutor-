@@ -107,13 +107,56 @@ test("tutor publishes a resource from the real form", async ({ page }) => {
   await page
     .getByLabel("Description", { exact: true })
     .fill("Resource created through the tutor interface.");
-  await page
-    .getByLabel("HTTPS resource URL")
-    .fill("https://www.khanacademy.org/math/algebra");
+  await page.getByLabel(/PDF \(maximum/).setInputFiles({
+    name: "lesson.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n%%EOF"),
+  });
   await page.getByRole("button", { name: "Save resource" }).click();
   await expect(
     page.getByText("Saved successfully", { exact: true }),
   ).toBeVisible();
   await page.goto("/tutorials");
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
+});
+
+test("assigned student and tutor exchange messages through their dashboards", async ({
+  page,
+  browser,
+}) => {
+  await login(page, "alex");
+  await page.goto("/dashboard/sessions");
+  await page.getByRole("link", { name: "Message tutor" }).first().click();
+  const question = "Message test " + Date.now();
+  await page.getByLabel("Message", { exact: true }).fill(question);
+  await page.getByRole("button", { name: "Send message", exact: true }).click();
+  await expect(
+    page.locator(".message-history").getByText(question, { exact: true }),
+  ).toBeVisible();
+  const teacherContext = await browser.newContext({
+    baseURL: "http://127.0.0.1:5173",
+  });
+  const teacher = await teacherContext.newPage();
+  try {
+    await teacher.goto("http://127.0.0.1:5173");
+    await login(teacher, "elena");
+    await teacher.goto("http://127.0.0.1:5173/dashboard/messages");
+    await teacher.locator(".peers button").first().click();
+    await expect(
+      teacher.locator(".message-history").getByText(question, { exact: true }),
+    ).toBeVisible();
+    await teacher
+      .getByLabel("Message", { exact: true })
+      .fill("Tutor reply: " + question);
+    await teacher
+      .getByRole("button", { name: "Send message", exact: true })
+      .click();
+    await expect(
+      page
+        .locator(".message-history")
+        .getByText("Tutor reply: " + question, { exact: true }),
+    ).toBeVisible({ timeout: 10000 });
+  } finally {
+    await teacherContext.close();
+  }
 });

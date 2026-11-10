@@ -43,9 +43,11 @@ test("tutor saves, edits and publishes an unpublished draft", async ({
   await page
     .getByLabel("Description", { exact: true })
     .fill("A draft lesson for future learners.");
-  await page
-    .getByLabel("HTTPS resource URL")
-    .fill("https://www.khanacademy.org/math/algebra");
+  await page.getByLabel(/PDF \(maximum/).setInputFiles({
+    name: "lesson.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n%%EOF"),
+  });
   await page.getByLabel("Publication").selectOption("draft");
   await page
     .getByRole("button", { name: "Save resource", exact: true })
@@ -186,13 +188,11 @@ test("20 MB PDF uploads use a signed storage request rather than the API request
       .fill("Exercise a twenty megabyte browser upload.");
     const file = Buffer.alloc(20 * 1024 * 1024, 32);
     file.write("%PDF-1.4");
-    await page
-      .getByLabel("PDF (maximum 20 MB)")
-      .setInputFiles({
-        name: "large-lesson.pdf",
-        mimeType: "application/pdf",
-        buffer: file,
-      });
+    await page.getByLabel("PDF (maximum 20 MB)").setInputFiles({
+      name: "large-lesson.pdf",
+      mimeType: "application/pdf",
+      buffer: file,
+    });
     await page
       .getByRole("button", { name: "Save resource", exact: true })
       .click();

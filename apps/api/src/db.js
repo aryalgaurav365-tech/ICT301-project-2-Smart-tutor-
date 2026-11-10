@@ -35,6 +35,12 @@ async function migrateSchema(db) {
   const ref = (t, n, table = "users") =>
     t.integer(n).unsigned().references("id").inTable(table);
   const tables = {
+    stored_files: (t) => {
+      t.string("id", 64).primary();
+      t.text("content", "longtext").notNullable();
+      t.string("type").notNullable();
+      t.string("created_at").notNullable();
+    },
     users: (t) => {
       t.increments();
       t.string("name");

@@ -216,18 +216,24 @@ test("admin invitations require recent authentication, match an email, expire an
 });
 test("only owners may change drafts and publishing closes tutor editing", async () => {
   const sid = (await db("subjects").first()).id;
-  let r = await call("/tutorials", {
+  const form = new FormData();
+  for (const [key, value] of Object.entries({
+    title: "A draft",
+    description: "Draft description",
+    difficulty: "Beginner",
+    subject_id: sid,
+    status: "draft",
+  }))
+    form.set(key, String(value));
+  form.set(
+    "file",
+    new Blob(["%PDF-1.4\n%%EOF"], { type: "application/pdf" }),
+    "draft.pdf",
+  );
+  let r = await call("/tutorials/pdf", {
     role: "elena",
     method: "POST",
-    body: {
-      title: "A draft",
-      description: "Draft description",
-      difficulty: "Beginner",
-      subject_id: sid,
-      type: "link",
-      url: "https://example.com/lesson",
-      status: "draft",
-    },
+    body: form,
   });
   const draft = await r.json();
   const body = {
@@ -522,4 +528,134 @@ test("admin enrollment queues setup links without exposing a password", async ()
   assert.equal(messages.length, 2);
   assert.ok(messages.some((m) => m.subject.includes("Verify")));
   assert.ok(messages.some((m) => m.subject.includes("password")));
+});
+
+test("image resources reject video and disguised files, and preserve private downloads", async () => {
+  const bytes = await sharp({
+    create: { width: 30, height: 20, channels: 3, background: "red" },
+  })
+    .png()
+    .toBuffer();
+  const make = (bytes, type) => {
+    const f = new FormData();
+    for (const [key, value] of Object.entries({
+      title: "Image notes",
+      description: "A diagram",
+      subject_id: 1,
+      difficulty: "Beginner",
+      status: "published",
+    }))
+      f.set(key, String(value));
+    f.set("file", new Blob([bytes], { type }), "diagram.png");
+    return f;
+  };
+  for (const [content, type] of [
+    ["video", "video/mp4"],
+    ["video", "image/png"],
+    ["<svg></svg>", "image/svg+xml"],
+  ])
+    assert.equal(
+      (
+        await call("/tutorials/image", {
+          role: "elena",
+          method: "POST",
+          body: make(content, type),
+        })
+      ).status,
+      400,
+    );
+  assert.equal(
+    (
+      await call("/tutorials/image", {
+        role: "alex",
+        method: "POST",
+        body: make(bytes, "image/png"),
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await call("/tutorials", {
+        role: "elena",
+        method: "POST",
+        body: { type: "link", url: "https://example.test/video.mp4" },
+      })
+    ).status,
+    400,
+  );
+  const response = await call("/tutorials/image", {
+    role: "elena",
+    method: "POST",
+    body: make(bytes, "image/png"),
+  });
+  assert.equal(response.status, 201);
+  const { id } = await response.json();
+  assert.equal((await call(`/tutorials/${id}/open`)).status, 401);
+  const download = await call(`/tutorials/${id}/open`, { role: "alex" });
+  assert.equal(download.headers.get("content-type"), "image/webp");
+  assert.match(
+    download.headers.get("content-disposition"),
+    /learning-resource.webp/,
+  );
+  assert.equal(
+    (await sharp(Buffer.from(await download.arrayBuffer())).metadata()).format,
+    "webp",
+  );
+});
+
+test("completed-session ratings and private messaging work in both directions", async () => {
+  const student = await db("users").where({ username: "alex" }).first();
+  const tutor = await db("users").where({ username: "elena" }).first();
+  const [session] = await db("sessions").insert({
+    student_id: student.id,
+    tutor_id: tutor.id,
+    subject_id: 1,
+    status: "completed",
+    starts_at: "2026-01-01T09:00:00Z",
+    ends_at: "2026-01-01T10:00:00Z",
+    created_at: now(),
+  });
+  const review = { session_id: session, rating: 4, body: "Clear explanations" };
+  assert.equal(
+    (await call("/reviews", { role: "elena", method: "POST", body: review }))
+      .status,
+    403,
+  );
+  assert.equal(
+    (await call("/reviews", { role: "alex", method: "POST", body: review }))
+      .status,
+    201,
+  );
+  assert.equal(
+    (await call("/reviews", { role: "alex", method: "POST", body: review }))
+      .status,
+    409,
+  );
+  const sessions = await call("/sessions", { role: "alex" }).then((r) =>
+    r.json(),
+  );
+  assert.equal(sessions.find((s) => s.id === session).review_rating, 4);
+  for (const [role, recipient, body] of [
+    ["alex", tutor.id, "Question about homework"],
+    ["elena", student.id, "Here is some guidance"],
+  ])
+    assert.equal(
+      (
+        await call(`/messages/${recipient}`, {
+          role,
+          method: "POST",
+          body: { body },
+        })
+      ).status,
+      201,
+    );
+  const peers = await call("/peers", { role: "alex" }).then((r) => r.json());
+  assert.ok(peers.find((p) => p.id === tutor.id).unread > 0);
+  const thread = await call(`/messages/${tutor.id}`, { role: "alex" }).then(
+    (r) => r.json(),
+  );
+  assert.ok(thread.some((m) => m.body === "Here is some guidance"));
+  const updated = await call("/peers", { role: "alex" }).then((r) => r.json());
+  assert.equal(updated.find((p) => p.id === tutor.id).unread, 0);
 });

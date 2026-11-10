@@ -44,9 +44,13 @@ For a dashboard/runtime configuration mismatch, compare the `Deployment configur
 
 ## 4. CAPTCHA
 
-Create a Cloudflare Turnstile widget if its current free option is suitable. Allow your production frontend hostname and set `CAPTCHA_SITE_KEY` and `CAPTCHA_SECRET` in Vercel. Production registration verifies the response server-side. Local development uses explicit test behaviour; the local email inbox is absent in production.
+Create a Cloudflare Turnstile widget if its current free option is suitable. Allow your production frontend hostname and set `CAPTCHA_SITE_KEY` and `CAPTCHA_SECRET` in Vercel. Production registration verifies the response server-side, including the exact `APP_URL` hostname and the `register` action. The widget resets after a failed submission and clears expired tokens. Local development uses explicit test behaviour; the local email inbox is absent in production.
 
 ## 5. Private file storage
+
+Without an S3 bucket or a persistent disk, production stores PDFs and sanitized images in the existing application database (`stored_files`). This requires no additional service account. Files are limited to **3 MB each**, remain behind authenticated resource downloads, and survive redeployments. The additive schema initialization creates the table. Base64 storage uses approximately one third more database space; monitor your TiDB quota and include this table in backups. Tutors can upload PDF, JPEG, PNG and WebP; images are decoded and rewritten as still WebP files with metadata removed. Videos, SVGs, animated images and new external-link uploads are rejected. Existing legacy link resources remain readable.
+
+For PDFs up to **20 MB**, configure object storage as below. On Vercel, image uploads remain limited to 3 MB because they pass through the function for image processing.
 
 Use a private S3-compatible bucket with a currently suitable free allowance. Set `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and, if needed, `S3_FORCE_PATH_STYLE=true` in Vercel. Restrict credentials to the application's bucket and required object operations. Provider account, billing and free allowances must be checked before signup; no zero-cost guarantee is implied.
 

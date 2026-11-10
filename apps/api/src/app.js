@@ -1,4 +1,6 @@
 import express from "express";
+import sharp from "sharp";
+import { verifyCaptcha } from "./captcha.js";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
@@ -47,7 +49,7 @@ export function createApp(
   } = {},
 ) {
   const app = express();
-  const store = fileStore || storage({ dataDir, production });
+  const store = fileStore || storage({ dataDir, production, db });
   app.disable("x-powered-by");
   const hops = Number(proxyHops);
   if (!Number.isInteger(hops) || hops < 0)
@@ -205,6 +207,7 @@ export function createApp(
       demo: !production,
       captchaSiteKey: process.env.CAPTCHA_SITE_KEY || null,
       directPdfUploads: store.remote,
+      maxResourceFileBytes: store.maxUploadBytes || 3 * 1024 * 1024,
       maxProfilePhotoBytes: process.env.VERCEL
         ? 3 * 1024 * 1024
         : 5 * 1024 * 1024,
@@ -249,22 +252,7 @@ export function createApp(
       fail(400, "Date of birth and home address are required");
     if (s.role === "tutor" && !s.qualifications)
       fail(400, "Qualifications are required");
-    if (production) {
-      if (!process.env.CAPTCHA_SECRET)
-        fail(503, "Registration awaits CAPTCHA configuration");
-      const result = await fetch(
-        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            secret: process.env.CAPTCHA_SECRET,
-            response: s.captcha || "",
-          }),
-        },
-      ).then((r) => r.json());
-      if (!result.success) fail(400, "Complete CAPTCHA verification");
-    }
+    if (production) await verifyCaptcha(s.captcha);
     if (
       await db("users")
         .where({ email: s.email.toLowerCase() })
@@ -461,24 +449,14 @@ export function createApp(
     status: z.enum(["draft", "published"]).default("published"),
   });
   app.post("/api/tutorials", auth("tutor", "admin"), async (req, res) => {
-    const s = tutorialSchema
-      .extend({
-        type: z.literal("link"),
-        url: z
-          .url()
-          .refine((v) => v.startsWith("https://"), "Use an HTTPS link"),
-      })
-      .parse(req.body);
-    const [tid] = await db("tutorials").insert({
-      ...s,
-      tutor_id: req.user.id,
-      created_at: now(),
-    });
-    res.status(201).json({ id: tid });
+    fail(
+      400,
+      "Upload a PDF or a JPEG, PNG or WebP image. Video and link uploads are not supported.",
+    );
   });
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 20 * 1024 * 1024, files: 1 },
+    limits: { fileSize: store.maxUploadBytes || 20 * 1024 * 1024, files: 1 },
   });
   app.post(
     "/api/tutorials/pdf",
@@ -492,17 +470,78 @@ export function createApp(
         req.file.mimetype !== "application/pdf" ||
         req.file.buffer.subarray(0, 5).toString() !== "%PDF-"
       )
-        fail(400, "Choose a valid PDF (maximum 20 MB)");
+        fail(
+          400,
+          "Choose a valid PDF document within the displayed size limit",
+        );
       const s = tutorialSchema.parse(req.body),
         file = await store.put(req.file.buffer, "pdf", "application/pdf");
-      const [tid] = await db("tutorials").insert({
-        ...s,
-        file,
-        type: "pdf",
-        tutor_id: req.user.id,
-        created_at: now(),
-      });
-      res.status(201).json({ id: tid });
+      try {
+        const [tid] = await db("tutorials").insert({
+          ...s,
+          file,
+          type: "pdf",
+          tutor_id: req.user.id,
+          created_at: now(),
+        });
+        res.status(201).json({ id: tid });
+      } catch (error) {
+        await store.remove(file).catch(() => {});
+        throw error;
+      }
+    },
+  );
+  app.post(
+    "/api/tutorials/image",
+    auth("tutor", "admin"),
+    upload.single("file"),
+    async (req, res) => {
+      if (!store.available) fail(503, "File storage is unavailable");
+      if (
+        !req.file ||
+        !["image/jpeg", "image/png", "image/webp"].includes(req.file.mimetype)
+      )
+        fail(400, "Choose a JPEG, PNG or WebP image. Videos are not allowed.");
+      const metadata = tutorialSchema.parse(req.body);
+      let buffer;
+      try {
+        const image = sharp(req.file.buffer, {
+          limitInputPixels: 25000000,
+          animated: true,
+        });
+        const info = await image.metadata();
+        if (
+          !["jpeg", "png", "webp"].includes(info.format) ||
+          (info.pages || 1) !== 1
+        )
+          fail(400, "Choose a still JPEG, PNG or WebP image");
+        buffer = await image
+          .rotate()
+          .resize({
+            width: 2400,
+            height: 2400,
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .webp({ quality: 85 })
+          .toBuffer();
+      } catch {
+        fail(400, "Choose a valid still JPEG, PNG or WebP image");
+      }
+      const file = await store.put(buffer, "webp", "image/webp");
+      try {
+        const [tid] = await db("tutorials").insert({
+          ...metadata,
+          file,
+          type: "image",
+          tutor_id: req.user.id,
+          created_at: now(),
+        });
+        res.status(201).json({ id: tid });
+      } catch (error) {
+        await store.remove(file).catch(() => {});
+        throw error;
+      }
     },
   );
   app.get("/api/tutorials/:id/open", auth(), async (req, res) => {
@@ -522,7 +561,10 @@ export function createApp(
       created_at: now(),
     });
     if (t.type === "link") return res.redirect(t.url);
-    await store.send(res, t.file, { attachment: true });
+    await store.send(res, t.file, {
+      attachment: true,
+      type: t.type === "image" ? "image/webp" : "application/pdf",
+    });
   });
   app.patch("/api/tutorials/:id", auth("admin"), async (req, res) => {
     const s = z
@@ -539,9 +581,11 @@ export function createApp(
     res.json({ message: "Resource updated" });
   });
   app.delete("/api/tutorials/:id", auth("admin"), async (req, res) => {
-    await db("tutorials")
-      .where({ id: id.parse(req.params.id) })
-      .del();
+    const tid = id.parse(req.params.id);
+    const resource = await db("tutorials").where({ id: tid }).first();
+    if (!resource) fail(404, "Resource not found");
+    await db("tutorials").where({ id: tid }).del();
+    if (resource.file) await store.remove(resource.file);
     res.json({ message: "Resource removed" });
   });
   app.get("/api/availability", auth("tutor"), async (req, res) =>
@@ -621,6 +665,10 @@ export function createApp(
             (req.user.role === "student" ? "student_id" : "tutor_id"),
           req.user.id,
         );
+      if (table === "sessions")
+        q = q
+          .leftJoin("reviews", "reviews.session_id", "sessions.id")
+          .select("reviews.rating as review_rating");
       res.json(await q.orderBy(table + ".created_at", "desc"));
     });
   app.post("/api/requests/:id/assign", auth("admin"), async (req, res) => {
@@ -740,11 +788,20 @@ export function createApp(
         .where({ [own]: req.user.id })
         .whereNot("status", "cancelled")
     ).map((s) => s[other]);
+    const peers = await db("users")
+      .whereIn("id", ids)
+      .where({ status: "active" })
+      .select("id", "name", "role");
+    const unread = await db("messages")
+      .where({ recipient_id: req.user.id, is_read: false })
+      .select("sender_id")
+      .count({ total: "id" })
+      .groupBy("sender_id");
     res.json(
-      await db("users")
-        .whereIn("id", ids)
-        .where({ status: "active" })
-        .select("id", "name", "role"),
+      peers.map((p) => ({
+        ...p,
+        unread: Number(unread.find((m) => m.sender_id === p.id)?.total || 0),
+      })),
     );
   });
   const canMessage = async (a, b) =>

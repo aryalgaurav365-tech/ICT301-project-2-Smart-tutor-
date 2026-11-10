@@ -10,8 +10,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
-export function storage({ dataDir, production }) {
+export function storage({ dataDir, production, db }) {
   const remote = !!process.env.S3_BUCKET;
+  const databaseFiles =
+    production && !remote && process.env.PERSISTENT_DISK !== "true" && !!db;
   const client = remote
     ? new S3Client({
         region: process.env.S3_REGION || "auto",
@@ -32,7 +34,13 @@ export function storage({ dataDir, production }) {
     return path.join(dataDir, "uploads", key);
   };
   return {
-    available: !production || remote || process.env.PERSISTENT_DISK === "true",
+    available:
+      !production ||
+      remote ||
+      databaseFiles ||
+      process.env.PERSISTENT_DISK === "true",
+    maxUploadBytes:
+      databaseFiles || process.env.VERCEL ? 3 * 1024 * 1024 : 20 * 1024 * 1024,
     remote,
     async stagePdf(size) {
       if (!client)
@@ -108,6 +116,21 @@ export function storage({ dataDir, production }) {
       return "s3:" + final;
     },
     async put(buffer, extension, type) {
+      if (databaseFiles) {
+        if (buffer.length > 3 * 1024 * 1024)
+          throw Object.assign(new Error("Files must be 3 MB or smaller"), {
+            status: 413,
+          });
+        const key = randomBytes(24).toString("hex") + "." + extension;
+        keyPath(key);
+        await db("stored_files").insert({
+          id: key,
+          content: buffer.toString("base64"),
+          type,
+          created_at: new Date().toISOString(),
+        });
+        return "db:" + key;
+      }
       if (production && !remote && process.env.PERSISTENT_DISK !== "true")
         throw Object.assign(
           new Error("Configure persistent file storage before uploading"),
@@ -134,6 +157,25 @@ export function storage({ dataDir, production }) {
       file,
       { attachment = false, type = "application/pdf" } = {},
     ) {
+      const filename =
+        type === "image/webp"
+          ? "learning-resource.webp"
+          : "learning-resource.pdf";
+      if (file.startsWith("db:")) {
+        if (!db)
+          throw Object.assign(new Error("File storage unavailable"), {
+            status: 503,
+          });
+        const row = await db("stored_files")
+          .where({ id: file.slice(3) })
+          .first();
+        if (!row)
+          throw Object.assign(new Error("File not found"), { status: 404 });
+        res.type(type);
+        res.setHeader("Cache-Control", "private, no-store");
+        if (attachment) res.attachment(filename);
+        return res.send(Buffer.from(row.content, "base64"));
+      }
       if (file.startsWith("s3:")) {
         if (!client)
           throw Object.assign(new Error("Object storage is unavailable"), {
@@ -148,7 +190,7 @@ export function storage({ dataDir, production }) {
             Key: key,
             ResponseContentType: type,
             ResponseContentDisposition: attachment
-              ? 'attachment; filename="learning-resource.pdf"'
+              ? `attachment; filename="${filename}"`
               : "inline",
           }),
           { expiresIn: 60 },
@@ -159,11 +201,18 @@ export function storage({ dataDir, production }) {
       if (!/^[a-f0-9]{48,64}\.(pdf|webp)$/.test(file))
         throw new Error("Invalid stored filename");
       res.type(type);
-      if (attachment) res.attachment("learning-resource.pdf");
+      if (attachment) res.attachment(filename);
       return res.sendFile(path.join(dataDir, "uploads", file));
     },
     async remove(file) {
       if (!file) return;
+      if (file.startsWith("db:")) {
+        if (!db) throw new Error("File storage unavailable");
+        await db("stored_files")
+          .where({ id: file.slice(3) })
+          .del();
+        return;
+      }
       if (file.startsWith("s3:")) {
         if (!client) throw new Error("Object storage unavailable");
         const key = file.slice(3);

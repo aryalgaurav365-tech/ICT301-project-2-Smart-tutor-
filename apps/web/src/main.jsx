@@ -33,6 +33,7 @@ import {
   Clock,
 } from "lucide-react";
 import "./style.css";
+import Captcha from "./Captcha";
 import {
   Context,
   useApp,
@@ -647,6 +648,7 @@ function Resources() {
         >
           <option value="">All formats</option>
           <option value="pdf">PDF</option>
+          <option value="image">Image</option>
           <option value="link">External link</option>
         </select>
         <small>{filtered?.length || 0} resources</small>
@@ -715,20 +717,9 @@ function Auth({ register = false }) {
     [role, setRole] = useState("student"),
     [step, setStep] = useState("credentials"),
     [email, setEmail] = useState(""),
-    [captcha, setCaptcha] = useState("");
+    [captcha, setCaptcha] = useState(""),
+    [captchaReset, setCaptchaReset] = useState(0);
   useEffect(() => setStep("credentials"), [register]);
-  useEffect(() => {
-    if (!register || !config?.captchaSiteKey) return;
-    window.onTurnstileSuccess = setCaptcha;
-    const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-    script.async = true;
-    document.head.appendChild(script);
-    return () => {
-      script.remove();
-      delete window.onTurnstileSuccess;
-    };
-  }, [register, config?.captchaSiteKey]);
   return (
     <div className="container auth-page">
       <div className="auth-story">
@@ -784,9 +775,16 @@ function Auth({ register = false }) {
                   ? "Verify and sign in"
                   : "Continue"
             }
+            onError={() => {
+              if (register) setCaptchaReset((n) => n + 1);
+            }}
             transform={(f) => {
               const v = Object.fromEntries(f);
               if (register) {
+                if (!config?.demo && !captcha)
+                  throw new Error(
+                    "Complete CAPTCHA verification before creating your account",
+                  );
                 if (v.password !== v.confirm)
                   throw new Error("Passwords do not match");
                 if (v.email !== v.emailConfirm)
@@ -927,10 +925,10 @@ function Auth({ register = false }) {
                       <Link to="/privacy">Privacy Policy</Link>.
                     </label>
                     {config?.captchaSiteKey && (
-                      <div
-                        className="cf-turnstile"
-                        data-sitekey={config.captchaSiteKey}
-                        data-callback="onTurnstileSuccess"
+                      <Captcha
+                        siteKey={config.captchaSiteKey}
+                        onToken={setCaptcha}
+                        reset={captchaReset}
                       />
                     )}
                   </>
@@ -1437,18 +1435,39 @@ function Sessions() {
                 )}
               </>
             )}
-            {user.role === "student" && s.status === "completed" && (
-              <button className="btn secondary" onClick={() => setReview(s.id)}>
-                Leave a review
-              </button>
+            {s.review_rating && (
+              <span className="badge">Rated {s.review_rating}/5 ★</span>
             )}
+            {user.role !== "admin" && s.status !== "cancelled" && (
+              <Link
+                className="btn secondary"
+                to={`/dashboard/messages?peer=${user.role === "student" ? s.tutor_id : s.student_id}`}
+              >
+                Message {user.role === "student" ? "tutor" : "student"}
+              </Link>
+            )}
+            {user.role === "student" &&
+              s.status === "completed" &&
+              !s.review_rating && (
+                <button
+                  className="btn secondary"
+                  onClick={() => setReview(s.id)}
+                >
+                  Leave a review
+                </button>
+              )}
           </div>
         </div>
       ))}
       {sessions?.length === 0 && <Empty>No confirmed sessions yet.</Empty>}
       {review && (
         <div className="modal-backdrop">
-          <div className="panel modal">
+          <div
+            className="panel modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Rate your tutor"
+          >
             <button
               className="icon modal-close"
               aria-label="Close review"
@@ -1464,7 +1483,10 @@ function Sessions() {
                 session_id: review,
               })}
               submit="Publish review"
-              onDone={() => setReview(null)}
+              onDone={() => {
+                setReview(null);
+                refresh();
+              }}
             >
               <label>
                 Rating
@@ -1570,14 +1592,17 @@ function People() {
 }
 function UploadResource() {
   const [subjects] = useData("/subjects"),
-    [type, setType] = useState("link"),
+    [type, setType] = useState("pdf"),
     [config] = useData("/config");
   return (
     <>
       <h1>
         Share a little <em>knowledge.</em>
       </h1>
-      <p>Your perspective could be someone else’s breakthrough.</p>
+      <p>
+        Upload PDFs or still images (JPEG, PNG and WebP). Video uploads are not
+        supported.
+      </p>
       <div className="panel">
         <Form
           endpoint={
@@ -1585,13 +1610,26 @@ function UploadResource() {
               ? config?.directPdfUploads
                 ? "/uploads/pdf/complete"
                 : "/tutorials/pdf"
-              : "/tutorials"
+              : "/tutorials/image"
           }
           submit="Save resource"
           transform={async (f) => {
-            if (type !== "pdf") return { ...Object.fromEntries(f), type };
-            if (!config?.directPdfUploads) return f;
             const file = f.get("file");
+            const allowed =
+              type === "pdf"
+                ? ["application/pdf"]
+                : ["image/jpeg", "image/png", "image/webp"];
+            const max =
+              type === "pdf" && config?.directPdfUploads
+                ? 20 * 1024 * 1024
+                : config?.maxResourceFileBytes || 3 * 1024 * 1024;
+            if (!file?.size || !allowed.includes(file.type))
+              throw new Error(
+                "Choose a PDF or JPEG, PNG or WebP image. Videos are not allowed.",
+              );
+            if (file.size > max)
+              throw new Error(`Choose a file up to ${max / 1024 / 1024} MB`);
+            if (type !== "pdf" || !config?.directPdfUploads) return f;
             if (!file || file.size > 20 * 1024 * 1024 || file.size < 5)
               throw new Error("Choose a PDF up to 20 MB");
             const metadata = Object.fromEntries(
@@ -1640,10 +1678,10 @@ function UploadResource() {
           <div className="role-toggle">
             <button
               type="button"
-              className={type === "link" ? "selected" : ""}
-              onClick={() => setType("link")}
+              className={type === "image" ? "selected" : ""}
+              onClick={() => setType("image")}
             >
-              External link
+              Image (JPEG, PNG, WebP)
             </button>
             <button
               type="button"
@@ -1655,7 +1693,7 @@ function UploadResource() {
           </div>
           {type === "pdf" ? (
             <Field
-              label="PDF (maximum 20 MB)"
+              label={`PDF (maximum ${config?.directPdfUploads ? 20 : (config?.maxResourceFileBytes || 3 * 1024 * 1024) / 1024 / 1024} MB)`}
               name="file"
               type="file"
               accept="application/pdf"
@@ -1663,10 +1701,10 @@ function UploadResource() {
             />
           ) : (
             <Field
-              label="HTTPS resource URL"
-              name="url"
-              type="url"
-              pattern="https://.*"
+              label={`Image (maximum ${(config?.maxResourceFileBytes || 3 * 1024 * 1024) / 1024 / 1024} MB)`}
+              name="file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
               required
             />
           )}
@@ -1774,8 +1812,14 @@ function Availability() {
   );
 }
 function Messages() {
-  const [peers, error] = useData("/peers"),
-    [peer, setPeer] = useState("");
+  const [params, setParams] = useSearchParams();
+  const [peers, error, reloadPeers] = useData("/peers");
+  const peer = params.get("peer") || "";
+  const setPeer = (id) => setParams({ peer: id });
+  useEffect(() => {
+    const timer = setInterval(reloadPeers, 5000);
+    return () => clearInterval(timer);
+  }, []);
   return (
     <>
       <h1>
@@ -1792,7 +1836,15 @@ function Messages() {
               onClick={() => setPeer(String(p.id))}
             >
               <Avatar name={p.name} />
-              {p.name}
+              {p.name}{" "}
+              {p.unread > 0 && (
+                <span
+                  className="badge"
+                  aria-label={`${p.unread} unread messages`}
+                >
+                  {p.unread}
+                </span>
+              )}
             </button>
           ))}
           {peers?.length === 0 && (
@@ -1800,7 +1852,7 @@ function Messages() {
           )}
         </div>
         {peer ? (
-          <Conversation peer={peer} />
+          <Conversation key={peer} peer={peer} />
         ) : (
           <div className="panel">
             <Empty>Choose a conversation to get started.</Empty>
@@ -1841,7 +1893,10 @@ function Conversation({ peer }) {
           reload();
         }}
       >
-        <Field label="Message" name="body" required maxLength={3000} />
+        <label>
+          Message
+          <textarea name="body" required maxLength={3000} rows={3} />
+        </label>
       </Form>
     </div>
   );
@@ -1936,6 +1991,11 @@ function Contact() {
       <h1>
         Let’s start a <em>conversation.</em>
       </h1>
+      <p>
+        Email us at{" "}
+        <a href="mailto:aryalgaurav365@gmail.com">aryalgaurav365@gmail.com</a>,
+        or send an enquiry using the form below.
+      </p>
       <div className="panel">
         {done ? (
           <p>

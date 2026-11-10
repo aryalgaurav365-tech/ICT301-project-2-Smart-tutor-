@@ -90,6 +90,7 @@ function Form({
   children,
   submit = "Save",
   onDone,
+  onError,
   transform,
 }) {
   const [error, setError] = useState(""),
@@ -111,6 +112,7 @@ function Form({
           window.dispatchEvent(new Event("data-changed"));
         } catch (e) {
           setError(e.message);
+          onError?.(e);
         } finally {
           setBusy(false);
         }

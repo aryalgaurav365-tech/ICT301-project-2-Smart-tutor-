@@ -216,3 +216,46 @@ test("spreadsheet output contains escaped literal cells and proper workbook rela
   assert.ok(sheet.includes("=HYPERLINK(&quot;x&quot;) &amp; &lt;test&gt;"));
   assert.equal(sheet.includes("<f>"), false);
 });
+
+test("production database file storage survives new storage instances without a local disk", async () => {
+  const db = database(":memory:");
+  try {
+    await migrate(db);
+    const options = {
+      db,
+      production: true,
+      dataDir: "/tmp/unused-smarttutor-storage",
+    };
+    const first = storage(options);
+    assert.equal(first.available, true);
+    const key = await first.put(
+      Buffer.from("%PDF-1.4\n%%EOF"),
+      "pdf",
+      "application/pdf",
+    );
+    assert.ok(key.startsWith("db:"));
+    const second = storage(options);
+    let bytes;
+    await second.send(
+      {
+        type() {},
+        setHeader() {},
+        attachment() {},
+        send(value) {
+          bytes = value;
+        },
+      },
+      key,
+      { attachment: true },
+    );
+    assert.equal(bytes.toString(), "%PDF-1.4\n%%EOF");
+    await assert.rejects(
+      first.put(Buffer.alloc(3 * 1024 * 1024 + 1), "pdf", "application/pdf"),
+      { status: 413 },
+    );
+    await second.remove(key);
+    assert.equal((await db("stored_files")).length, 0);
+  } finally {
+    await db.destroy();
+  }
+});
